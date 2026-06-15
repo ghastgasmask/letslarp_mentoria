@@ -1,4 +1,5 @@
 import { Bookmark, BookOpen, Trophy, CalendarCheck, Zap } from 'lucide-react'
+import { useAuth } from '@/context/AuthContext'
 
 const metrics = [
   { icon: Bookmark, label: 'Сохранённых возможностей', value: '5', color: 'text-primary-600 bg-primary-50' },
@@ -15,7 +16,7 @@ const myCourses = [
 
 const savedOpportunities = [
   { title: 'Республиканская олимпиада по математике', deadline: '20 июня', category: 'Олимпиады', color: 'bg-blue-100 text-blue-700' },
-  { title: 'KazHack 2025 — национальный IT-хакатон', deadline: '1 июля', category: 'Хакатоны', color: 'bg-purple-100 text-purple-700' },
+  { title: 'KazHack 2025 — национальный IT-хакатон', deadline: '1 июля', category: 'Хакатаны', color: 'bg-purple-100 text-purple-700' },
   { title: 'Летняя школа по физике — НАО НУ', deadline: '10 июня', category: 'Летние школы', color: 'bg-rose-100 text-rose-700' },
   { title: 'Конкурс научных проектов STEM KZ', deadline: '30 июня', category: 'Конкурсы', color: 'bg-amber-100 text-amber-700' },
 ]
@@ -35,11 +36,14 @@ const deadlines = [
 ]
 
 export default function DashboardPage() {
+  const { user } = useAuth()
+  const displayName = user?.user_metadata?.full_name || user?.email?.split('@')[0] || 'Пользователь'
+
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
       {/* Header */}
       <div className="mb-10">
-        <h1 className="text-3xl font-bold text-neutral-900 mb-1">Добро пожаловать, Айдана 👋</h1>
+        <h1 className="text-3xl font-bold text-neutral-900 mb-1">Добро пожаловать, {displayName} 👋</h1>
         <p className="text-neutral-500">Вот что происходит на твоей платформе сегодня</p>
       </div>
 

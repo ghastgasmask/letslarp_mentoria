@@ -1,5 +1,6 @@
 import { NavLink, useNavigate } from 'react-router-dom'
-import { BookOpen, Search, Trophy, Calendar, Map, Settings } from 'lucide-react'
+import { BookOpen, Search, Trophy, Calendar, Map, Settings, LogOut } from 'lucide-react'
+import { useAuth } from '@/context/AuthContext'
 
 const navLinks = [
   { to: '/courses', icon: BookOpen, label: 'Курсы' },
@@ -11,6 +12,20 @@ const navLinks = [
 
 export default function Navbar() {
   const navigate = useNavigate()
+  const { user, signOut } = useAuth()
+
+  // Get display name from user metadata or email
+  const displayName = user?.user_metadata?.full_name || user?.email?.split('@')[0] || 'Пользователь'
+  const initials = displayName.slice(0, 2).toUpperCase()
+
+  const handleSignOut = async () => {
+    try {
+      await signOut()
+      navigate('/')
+    } catch (err) {
+      console.error('Sign out error:', err)
+    }
+  }
 
   return (
     <nav className="fixed top-0 left-0 right-0 z-50 bg-white border-b border-neutral-200 h-16">
@@ -49,8 +64,8 @@ export default function Navbar() {
           </div>
         </div>
 
-        {/* Right: Settings + Profile */}
-        <div className="flex items-center gap-3">
+        {/* Right: Settings + Profile + Sign Out */}
+        <div className="flex items-center gap-2">
           <NavLink
             to="/settings"
             className={({ isActive }) =>
@@ -66,9 +81,17 @@ export default function Navbar() {
             className="flex items-center gap-2 px-2 py-1.5 rounded-lg hover:bg-neutral-100 transition-all duration-150"
           >
             <div className="w-9 h-9 rounded-full bg-primary-100 flex items-center justify-center text-primary-700 font-semibold text-sm flex-shrink-0">
-              АИ
+              {initials}
             </div>
-            <span className="text-sm font-medium text-neutral-700 hidden sm:block">Айдана</span>
+            <span className="text-sm font-medium text-neutral-700 hidden sm:block">{displayName}</span>
+          </button>
+
+          <button
+            onClick={handleSignOut}
+            className="p-2 rounded-lg text-neutral-400 hover:text-red-500 hover:bg-red-50 transition-all duration-150"
+            title="Выйти"
+          >
+            <LogOut size={18} />
           </button>
         </div>
       </div>

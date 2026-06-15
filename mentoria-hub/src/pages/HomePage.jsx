@@ -1,4 +1,4 @@
-import { Link } from 'react-router-dom'
+import { useNavigate } from 'react-router-dom'
 import { Search, BookOpen, Bot, ArrowRight, CheckCircle } from 'lucide-react'
 
 const features = [
@@ -25,6 +25,8 @@ const features = [
 const badges = ['8–11 класс', 'Казахстан и мир', 'Бесплатно']
 
 export default function HomePage() {
+  const navigate = useNavigate()
+
   return (
     <div>
       {/* Hero Section */}
@@ -49,21 +51,21 @@ export default function HomePage() {
                 Mentoria Hub — платформа для казахстанских школьников: олимпиады, конкурсы, курсы и персональные рекомендации в одном месте.
               </p>
               <div className="flex flex-col sm:flex-row gap-4">
-                <Link
-                  to="/opportunities"
+                <button
+                  onClick={() => navigate('/auth')}
                   className="flex items-center justify-center gap-2 bg-white text-primary-700 font-semibold px-8 py-3.5 rounded-xl hover:bg-primary-50 transition-all duration-200 hover:shadow-lg"
                   id="hero-find-opportunities"
                 >
                   Найти возможности
                   <ArrowRight size={18} />
-                </Link>
-                <Link
-                  to="/courses"
+                </button>
+                <button
+                  onClick={() => navigate('/auth')}
                   className="flex items-center justify-center gap-2 border-2 border-white/60 text-white font-semibold px-8 py-3.5 rounded-xl hover:bg-white/10 transition-all duration-200"
                   id="hero-start-learning"
                 >
                   Начать обучение
-                </Link>
+                </button>
               </div>
             </div>
 
@@ -163,6 +165,7 @@ export default function HomePage() {
           <h2 className="text-3xl font-bold mb-4">Готов начать?</h2>
           <p className="text-primary-200 mb-8 text-lg">Присоединяйся к тысячам школьников, которые уже строят своё будущее с Mentoria Hub</p>
           <button
+            onClick={() => navigate('/auth')}
             className="bg-white text-primary-700 font-bold px-10 py-4 rounded-xl hover:bg-primary-50 transition-all duration-200 hover:shadow-lg text-lg"
             id="cta-register"
           >

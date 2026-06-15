@@ -1,9 +1,19 @@
 import { useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { User, Bell, Globe, LogOut, Camera } from 'lucide-react'
+import { useAuth } from '@/context/AuthContext'
 
 const interests = ['Математика', 'Физика', 'Программирование', 'Английский', 'SAT/IELTS', 'Экономика']
 
 export default function SettingsPage() {
+  const navigate = useNavigate()
+  const { signOut, user } = useAuth()
+  const fullName = user?.user_metadata?.full_name || ''
+  const spaceIndex = fullName.indexOf(' ')
+  const firstName = spaceIndex !== -1 ? fullName.substring(0, spaceIndex) : fullName || user?.email?.split('@')[0] || ''
+  const lastName = spaceIndex !== -1 ? fullName.substring(spaceIndex + 1) : ''
+  const initials = (firstName.slice(0, 1) + (lastName.slice(0, 1) || '')).toUpperCase() || 'U'
+
   const [notifications, setNotifications] = useState({
     deadlines: true,
     newCourses: true,
@@ -21,6 +31,15 @@ export default function SettingsPage() {
 
   const toggleNotif = (key) => {
     setNotifications((prev) => ({ ...prev, [key]: !prev[key] }))
+  }
+
+  const handleLogout = async () => {
+    try {
+      await signOut()
+      navigate('/')
+    } catch (err) {
+      console.error('Logout error:', err)
+    }
   }
 
   return (
@@ -42,7 +61,7 @@ export default function SettingsPage() {
           <div className="flex items-start gap-6 mb-6">
             <div className="relative flex-shrink-0">
               <div className="w-20 h-20 rounded-full bg-primary-100 flex items-center justify-center text-primary-700 font-bold text-2xl">
-                АИ
+                {initials}
               </div>
               <button className="absolute bottom-0 right-0 w-7 h-7 bg-primary-600 rounded-full flex items-center justify-center text-white hover:bg-primary-700 transition-colors">
                 <Camera size={13} />
@@ -53,7 +72,7 @@ export default function SettingsPage() {
                 <label className="block text-xs font-semibold text-neutral-500 mb-1.5">Имя</label>
                 <input
                   type="text"
-                  defaultValue="Айдана"
+                  defaultValue={firstName}
                   className="w-full border border-neutral-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition"
                 />
               </div>
@@ -61,7 +80,7 @@ export default function SettingsPage() {
                 <label className="block text-xs font-semibold text-neutral-500 mb-1.5">Фамилия</label>
                 <input
                   type="text"
-                  defaultValue="Исакова"
+                  defaultValue={lastName}
                   className="w-full border border-neutral-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition"
                 />
               </div>
@@ -78,8 +97,9 @@ export default function SettingsPage() {
                 <label className="block text-xs font-semibold text-neutral-500 mb-1.5">Email</label>
                 <input
                   type="email"
-                  defaultValue="aidana@example.kz"
-                  className="w-full border border-neutral-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition"
+                  defaultValue={user?.email || ''}
+                  disabled
+                  className="w-full border border-neutral-200 bg-neutral-50 text-neutral-500 rounded-lg px-3 py-2 text-sm focus:outline-none cursor-not-allowed"
                 />
               </div>
             </div>
@@ -170,6 +190,7 @@ export default function SettingsPage() {
         <div className="card p-6">
           <h2 className="text-lg font-semibold text-neutral-900 mb-4">Аккаунт</h2>
           <button
+            onClick={handleLogout}
             className="flex items-center gap-2 bg-red-500 hover:bg-red-600 text-white px-6 py-2.5 rounded-lg font-medium transition-all duration-200"
             id="logout-btn"
           >
