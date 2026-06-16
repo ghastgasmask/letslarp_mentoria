@@ -104,27 +104,6 @@ export default function SettingsPage() {
               </div>
             </div>
           </div>
-
-          <div className="mb-4">
-            <label className="block text-xs font-semibold text-neutral-500 mb-2">Интересы</label>
-            <div className="flex flex-wrap gap-2">
-              {interests.map((i) => (
-                <button
-                  key={i}
-                  onClick={() => toggleInterest(i)}
-                  className={`px-3 py-1.5 rounded-full text-sm font-medium border transition-all duration-150 ${
-                    selectedInterests.includes(i)
-                      ? 'bg-primary-600 text-white border-primary-600'
-                      : 'bg-white text-neutral-600 border-neutral-300 hover:border-primary-400'
-                  }`}
-                >
-                  {i}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          <button className="btn-primary text-sm mt-2">Сохранить изменения</button>
         </div>
 
         {/* Notifications */}
