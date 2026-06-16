@@ -25,7 +25,7 @@ export function AuthProvider({ children }) {
     return () => subscription.unsubscribe()
   }, [])
 
-  const signUp = async (email, password, name) => {
+  const signUp = async (email, password, name, grade, interests) => {
     const { data, error } = await supabase.auth.signUp({
       email,
       password,
@@ -33,7 +33,32 @@ export function AuthProvider({ children }) {
         data: { full_name: name }
       }
     })
+
     if (error) throw error
+
+    const newUser = data.user
+
+    const { error: profileError } = await supabase
+      .from('profiles')
+      .insert({
+        id: newUser.id,
+        full_name: name,
+        grade: parseInt(grade),
+        interests: interests || []
+      })
+
+    if (profileError) throw profileError
+
+    const { error: leaderboardError } = await supabase
+      .from('leaderboard')
+      .insert({
+        user_id: newUser.id,
+        points: 0,
+        courses_completed: 0
+      })
+
+    if (leaderboardError) throw leaderboardError
+
     return data
   }
 

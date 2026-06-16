@@ -5,19 +5,19 @@ const features = [
   {
     icon: Search,
     title: 'Каталог возможностей',
-    description: 'Олимпиады, хакатоны, летние школы, гранты. Всё в одном месте, с фильтрами и дедлайнами.',
+    description: 'Олимпиады, хакатоны, летние школы, гранты. Все в одном месте, с фильтрами и дедлайнами',
     color: 'bg-blue-50 text-primary-600',
   },
   {
     icon: BookOpen,
     title: 'Курсы',
-    description: 'Математика, английский, физика, SAT/IELTS. Учись в своём темпе с персональным прогрессом.',
+    description: 'Математика, английский, физика, SAT, IELTS и дальше - больше. Учись в своем темпе с персональным прогрессом',
     color: 'bg-emerald-50 text-emerald-600',
   },
   {
     icon: Bot,
     title: 'AI-ассистент',
-    description: 'Персональные рекомендации на основе твоих интересов, целей и истории активности.',
+    description: 'Личные рекомендации на основе твоих интересов, целей и до этого истории',
     color: 'bg-purple-50 text-purple-600',
   },
 ]
@@ -41,14 +41,14 @@ export default function HomePage() {
             <div className="flex-1 max-w-2xl">
               <div className="inline-flex items-center gap-2 bg-white/10 backdrop-blur-sm rounded-full px-4 py-1.5 mb-6 text-sm font-medium">
                 <span className="w-2 h-2 bg-emerald-400 rounded-full animate-pulse" />
-                Платформа для казахстанских школьников
+                Официальная платформа для казахстанских школьников, учеников Mentoria!
               </div>
               <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold leading-tight mb-6">
                 Твой путь к успеху <br />
                 <span className="text-primary-200">начинается здесь</span>
               </h1>
               <p className="text-lg text-primary-100 mb-10 leading-relaxed">
-                Mentoria Hub — платформа для казахстанских школьников: олимпиады, конкурсы, курсы и персональные рекомендации в одном месте.
+                Mentoria Hub это - платформа для казахстанских школьников: тут олимпиады, конкурсы, курсы и персональные рекомендации в одном месте!
               </p>
               <div className="flex flex-col sm:flex-row gap-4">
                 <button
@@ -93,10 +93,6 @@ export default function HomePage() {
                   <div className="text-sm font-semibold">Олимпиада по физике</div>
                   <div className="text-xs text-emerald-300 mt-1">📅 20 июня 2025</div>
                 </div>
-                <div className="absolute top-1/2 right-4 -translate-y-1/2 bg-white/10 rounded-2xl p-3 backdrop-blur-sm">
-                  <Bot size={32} className="text-white" />
-                  <div className="text-xs text-center mt-1 text-primary-200">AI</div>
-                </div>
               </div>
             </div>
           </div>
@@ -108,7 +104,7 @@ export default function HomePage() {
         <div className="max-w-7xl mx-auto">
           <div className="text-center mb-14">
             <h2 className="text-3xl font-bold text-neutral-900 mb-4">Что такое Mentoria Hub?</h2>
-            <p className="text-neutral-500 max-w-xl mx-auto">Всё необходимое для успешного обучения и карьерного старта в одном месте</p>
+            <p className="text-neutral-500 max-w-xl mx-auto">Все необходимое для успешного обучения и карьеры в одном месте</p>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
             {features.map(({ icon: Icon, title, description, color }) => (
@@ -131,7 +127,7 @@ export default function HomePage() {
             <div className="flex-1">
               <h2 className="text-3xl font-bold text-neutral-900 mb-5">Mentoria Hub создан для тебя</h2>
               <p className="text-neutral-500 text-lg leading-relaxed mb-8">
-                Ученики 8–11 классов из Казахстана и других стран, которые хотят развиваться, участвовать в олимпиадах и поступить в лучшие университеты.
+                Ученики 8-11 классов из Казахстана и других стран, которые хотят развиваться, участвовать в олимпиадах и поступить в лучшие университеты.
               </p>
               <div className="flex flex-wrap gap-3">
                 {badges.map((badge) => (
@@ -144,7 +140,7 @@ export default function HomePage() {
             </div>
             <div className="flex-1 grid grid-cols-2 gap-4 w-full max-w-md">
               {[
-                { label: 'Участников', value: '2,400+' },
+                { label: 'Участников', value: '2400+' },
                 { label: 'Курсов', value: '48' },
                 { label: 'Возможностей', value: '120+' },
                 { label: 'Партнёров', value: '15' },
@@ -163,7 +159,7 @@ export default function HomePage() {
       <section className="bg-gradient-to-r from-primary-600 to-primary-800 py-20 px-4">
         <div className="max-w-2xl mx-auto text-center text-white">
           <h2 className="text-3xl font-bold mb-4">Готов начать?</h2>
-          <p className="text-primary-200 mb-8 text-lg">Присоединяйся к тысячам школьников, которые уже строят своё будущее с Mentoria Hub</p>
+          <p className="text-primary-200 mb-8 text-lg">Присоединяйся к тысячам школьников, которые уже строят своё будущее!</p>
           <button
             onClick={() => navigate('/auth')}
             className="bg-white text-primary-700 font-bold px-10 py-4 rounded-xl hover:bg-primary-50 transition-all duration-200 hover:shadow-lg text-lg"
