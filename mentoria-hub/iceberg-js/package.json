@@ -1,0 +1,85 @@
+{
+  "name": "iceberg-js",
+  "version": "1.0.0",
+  "description": "A small, framework-agnostic JavaScript/TypeScript client for the Apache Iceberg REST Catalog",
+  "type": "module",
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.mjs",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": {
+        "types": "./dist/index.d.ts",
+        "default": "./dist/index.mjs"
+      },
+      "require": {
+        "types": "./dist/index.d.cts",
+        "default": "./dist/index.cjs"
+      },
+      "default": "./dist/index.mjs"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsup",
+    "dev": "tsup --watch",
+    "docs": "pnpm gen:spec-types && typedoc src/index.ts",
+    "format": "prettier --write .",
+    "lint": "eslint .",
+    "type-check": "tsc --noEmit",
+    "gen:spec-types": "node scripts/gen-spec-types.mjs",
+    "test": "vitest run",
+    "test:watch": "vitest watch",
+    "test:integration": "bash scripts/test-integration.sh",
+    "test:integration:ci": "bash scripts/test-integration.sh --cleanup",
+    "test:compatibility": "bash test/compatibility/run-all.sh",
+    "check": "pnpm lint && pnpm type-check && pnpm test && pnpm build"
+  },
+  "keywords": [
+    "iceberg",
+    "apache-iceberg",
+    "rest-catalog",
+    "data-lake",
+    "catalog"
+  ],
+  "author": "mandarini",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/supabase/iceberg-js"
+  },
+  "bugs": {
+    "url": "https://github.com/supabase/iceberg-js/issues"
+  },
+  "homepage": "https://supabase.github.io/iceberg-js/",
+  "publishConfig": {
+    "access": "public"
+  },
+  "devDependencies": {
+    "@apidevtools/json-schema-ref-parser": "^15.3.5",
+    "@eslint/js": "^9.39.1",
+    "@eslint/json": "^0.14.0",
+    "@eslint/markdown": "^7.5.1",
+    "@types/js-yaml": "^4.0.9",
+    "@types/node": "^22.0.0",
+    "ajv": "^8.18.0",
+    "ajv-formats": "^3.0.1",
+    "eslint": "^9.39.1",
+    "globals": "^16.5.0",
+    "jiti": "^2.6.1",
+    "js-yaml": "^4.1.1",
+    "openapi-typescript": "^7.13.0",
+    "prettier": "^3.6.2",
+    "tsup": "^8.5.1",
+    "typedoc": "^0.28.14",
+    "typescript": "^5.9.3",
+    "typescript-eslint": "^8.47.0",
+    "vitest": "^4.0.12"
+  },
+  "engines": {
+    "node": ">=22.0.0"
+  },
+  "packageManager": "pnpm@11.0.8+sha512.4c4097e1dd2d42372c4e7fa5a791ff28fc75a484c7ac192e64b1df0fdef17594ba982f9b4fed9adfb3c757846f565b799b2763fb3733d1de1bcb82cf46684912"
+}
