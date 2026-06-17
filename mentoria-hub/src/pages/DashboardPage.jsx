@@ -47,6 +47,61 @@ export default function DashboardPage() {
         <p className="text-neutral-500">Вот что происходит на твоей платформе сегодня</p>
       </div>
 
+      {/* Profile Section */}
+        <div className="card p-6">
+          <div className="flex items-center gap-2 mb-6">
+            <User size={20} className="text-primary-600" />
+            <h2 className="text-lg font-semibold text-neutral-900">Профиль</h2>
+          </div>
+
+          <div className="flex items-start gap-6 mb-6">
+            <div className="relative flex-shrink-0">
+              <div className="w-20 h-20 rounded-full bg-primary-100 flex items-center justify-center text-primary-700 font-bold text-2xl">
+                {initials}
+              </div>
+              <button className="absolute bottom-0 right-0 w-7 h-7 bg-primary-600 rounded-full flex items-center justify-center text-white hover:bg-primary-700 transition-colors">
+                <Camera size={13} />
+              </button>
+            </div>
+            <div className="flex-1 grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-xs font-semibold text-neutral-500 mb-1.5">Имя</label>
+                <input
+                  type="text"
+                  defaultValue={firstName}
+                  className="w-full border border-neutral-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-semibold text-neutral-500 mb-1.5">Фамилия</label>
+                <input
+                  type="text"
+                  defaultValue={lastName}
+                  className="w-full border border-neutral-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-semibold text-neutral-500 mb-1.5">Класс</label>
+                <select className="w-full border border-neutral-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 transition bg-white">
+                  <option>8 класс</option>
+                  <option>9 класс</option>
+                  <option selected>10 класс</option>
+                  <option>11 класс</option>
+                </select>
+              </div>
+              <div>
+                <label className="block text-xs font-semibold text-neutral-500 mb-1.5">Email</label>
+                <input
+                  type="email"
+                  defaultValue={user?.email || ''}
+                  disabled
+                  className="w-full border border-neutral-200 bg-neutral-50 text-neutral-500 rounded-lg px-3 py-2 text-sm focus:outline-none cursor-not-allowed"
+                />
+              </div>
+            </div>
+          </div>
+        </div>
+
       {/* Metrics */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-10">
         {metrics.map(({ icon: Icon, label, value, color }) => (
