@@ -1,4 +1,4 @@
-import { Bookmark, BookOpen, Trophy, CalendarCheck, Zap } from 'lucide-react'
+import { Bookmark, BookOpen, Trophy, CalendarCheck, Zap, User, Camera } from 'lucide-react'
 import { useAuth } from '@/context/AuthContext'
 
 const metrics = [
@@ -38,6 +38,10 @@ const deadlines = [
 export default function DashboardPage() {
   const { user } = useAuth()
   const displayName = user?.user_metadata?.full_name || user?.email?.split('@')[0] || 'Пользователь'
+  const initials = String(displayName).slice(0, 2).toUpperCase()
+  const nameParts = String(displayName).split(' ')
+  const firstName = nameParts[0] || ''
+  const lastName = nameParts.slice(1).join(' ') || ''
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
@@ -102,8 +106,9 @@ export default function DashboardPage() {
           </div>
         </div>
 
+      
       {/* Metrics */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-10">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-10 mt-6">
         {metrics.map(({ icon: Icon, label, value, color }) => (
           <div key={label} className="card p-5">
             <div className={`w-11 h-11 rounded-xl ${color} flex items-center justify-center mb-3`}>
