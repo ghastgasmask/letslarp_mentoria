@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '@/context/AuthContext'
+import { isAdminEmail } from '@/lib/admin'
 import { Mail, Lock, User, Eye, EyeOff, ArrowRight, Loader2, ChevronLeft, GraduationCap } from 'lucide-react'
 
 const INTERESTS = [
@@ -63,6 +64,7 @@ export default function AuthPage() {
     name: '',
     grade: '9',
     interests: [],
+    wantsAdmin: false,
   })
   const [showPassword, setShowPassword] = useState(false)
   const [loading, setLoading] = useState(false)
@@ -90,6 +92,7 @@ export default function AuthPage() {
       name: '',
       grade: '9',
       interests: [],
+      wantsAdmin: false,
     })
     setStep(1)
     setError('')
@@ -125,6 +128,10 @@ export default function AuthPage() {
       setError('Пароли не совпадают')
       return
     }
+    if (formData.wantsAdmin && !isAdminEmail(formData.email)) {
+      setError('Этот email не может быть зарегистрирован как администратор')
+      return
+    }
 
     setStep(2)
   }
@@ -147,13 +154,14 @@ export default function AuthPage() {
         formData.password,
         formData.name,
         formData.grade,
-        formData.interests
+        formData.interests,
+        formData.wantsAdmin
       )
 
       if (data?.user && !data?.session) {
         setSuccess('Регистрация успешна! Проверьте почту для подтверждения.')
       } else {
-        navigate('/dashboard')
+        navigate(data.role === 'admin' ? '/admin' : '/dashboard')
       }
     } catch (err) {
       setError(translateError(err))
@@ -169,8 +177,8 @@ export default function AuthPage() {
     setLoading(true)
 
     try {
-      await signIn(formData.email, formData.password)
-      navigate('/dashboard')
+      const data = await signIn(formData.email, formData.password)
+      navigate(data.role === 'admin' ? '/admin' : '/dashboard')
     } catch (err) {
       setError(translateError(err))
     } finally {
@@ -195,8 +203,12 @@ export default function AuthPage() {
             <p className="text-sm text-neutral-500">
               {isSignUp
                 ? step === 1
-                  ? 'Создай аккаунт и начни путь к успеху'
-                  : 'Расскажи немного о себе'
+                  ? formData.wantsAdmin
+                    ? 'Создай аккаунт администратора'
+                    : 'Создай аккаунт и начни путь к успеху'
+                  : formData.wantsAdmin
+                    ? 'Заполни профиль администратора'
+                    : 'Расскажи немного о себе'
                 : 'Войди в свой аккаунт'}
             </p>
           </div>
@@ -365,6 +377,22 @@ export default function AuthPage() {
                     <p className="text-xs text-red-500 mt-1">Пароли не совпадают</p>
                   )}
                 </div>
+
+                <label
+                  className={`flex items-center gap-3 px-4 py-3 rounded-xl border cursor-pointer transition-all duration-150 ${
+                    formData.wantsAdmin
+                      ? 'bg-amber-50 border-amber-300 text-amber-800'
+                      : 'bg-white border-neutral-200 text-neutral-600 hover:border-neutral-300'
+                  }`}
+                >
+                  <input
+                    type="checkbox"
+                    checked={formData.wantsAdmin}
+                    onChange={(e) => updateField('wantsAdmin', e.target.checked)}
+                    className="w-4 h-4 rounded border-neutral-300 text-amber-600 focus:ring-amber-500"
+                  />
+                  <span className="text-sm font-medium">Я администратор</span>
+                </label>
               </div>
 
               {error && (
@@ -407,48 +435,52 @@ export default function AuthPage() {
                   </div>
                 </div>
 
-                <div>
-                  <label className="block text-xs font-semibold text-neutral-500 mb-1.5">Класс</label>
-                  <div className="relative">
-                    <GraduationCap size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-neutral-400 pointer-events-none" />
-                    <select
-                      value={formData.grade}
-                      onChange={(e) => updateField('grade', e.target.value)}
-                      className="w-full pl-10 pr-4 py-2.5 border border-neutral-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition bg-white appearance-none"
-                      id="auth-grade"
-                    >
-                      {GRADES.map((g) => (
-                        <option key={g} value={g}>
-                          {g} класс
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                </div>
-
-                <div>
-                  <label className="block text-xs font-semibold text-neutral-500 mb-2">Интересы</label>
-                  <div className="grid grid-cols-2 gap-2">
-                    {INTERESTS.map((interest) => (
-                      <label
-                        key={interest}
-                        className={`flex items-center gap-2 px-3 py-2 rounded-xl border text-sm cursor-pointer transition-all duration-150 ${
-                          formData.interests.includes(interest)
-                            ? 'bg-primary-50 border-primary-400 text-primary-700'
-                            : 'bg-white border-neutral-200 text-neutral-600 hover:border-primary-300'
-                        }`}
+                {!formData.wantsAdmin && (
+                  <div>
+                    <label className="block text-xs font-semibold text-neutral-500 mb-1.5">Класс</label>
+                    <div className="relative">
+                      <GraduationCap size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-neutral-400 pointer-events-none" />
+                      <select
+                        value={formData.grade}
+                        onChange={(e) => updateField('grade', e.target.value)}
+                        className="w-full pl-10 pr-4 py-2.5 border border-neutral-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition bg-white appearance-none"
+                        id="auth-grade"
                       >
-                        <input
-                          type="checkbox"
-                          checked={formData.interests.includes(interest)}
-                          onChange={() => toggleInterest(interest)}
-                          className="w-4 h-4 rounded border-neutral-300 text-primary-600 focus:ring-primary-500"
-                        />
-                        <span className="text-xs font-medium leading-tight">{interest}</span>
-                      </label>
-                    ))}
+                        {GRADES.map((g) => (
+                          <option key={g} value={g}>
+                            {g} класс
+                          </option>
+                        ))}
+                      </select>
+                    </div>
                   </div>
-                </div>
+                )}
+
+                {!formData.wantsAdmin && (
+                  <div>
+                    <label className="block text-xs font-semibold text-neutral-500 mb-2">Интересы</label>
+                    <div className="grid grid-cols-2 gap-2">
+                      {INTERESTS.map((interest) => (
+                        <label
+                          key={interest}
+                          className={`flex items-center gap-2 px-3 py-2 rounded-xl border text-sm cursor-pointer transition-all duration-150 ${
+                            formData.interests.includes(interest)
+                              ? 'bg-primary-50 border-primary-400 text-primary-700'
+                              : 'bg-white border-neutral-200 text-neutral-600 hover:border-primary-300'
+                          }`}
+                        >
+                          <input
+                            type="checkbox"
+                            checked={formData.interests.includes(interest)}
+                            onChange={() => toggleInterest(interest)}
+                            className="w-4 h-4 rounded border-neutral-300 text-primary-600 focus:ring-primary-500"
+                          />
+                          <span className="text-xs font-medium leading-tight">{interest}</span>
+                        </label>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </div>
 
               {error && (

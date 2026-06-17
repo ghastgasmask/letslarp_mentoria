@@ -1,7 +1,6 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import { AuthProvider, useAuth } from '@/context/AuthContext'
 
-// Pages
 import HomePage from '@/pages/HomePage'
 import AuthPage from '@/pages/AuthPage'
 import CoursesPage from '@/pages/CoursesPage'
@@ -12,12 +11,16 @@ import CalendarPage from '@/pages/CalendarPage'
 import RoadmapPage from '@/pages/RoadmapPage'
 import SettingsPage from '@/pages/SettingsPage'
 import AIAssistantPage from '@/pages/AIAssistantPage'
+import AdminPage from '@/pages/AdminPage'
+import AdminUsersPage from '@/pages/admin/AdminUsersPage'
+import AdminCoursesPage from '@/pages/admin/AdminCoursesPage'
+import AdminOpportunitiesPage from '@/pages/admin/AdminOpportunitiesPage'
+import AdminSettingsPage from '@/pages/admin/AdminSettingsPage'
 
-// Components
 import Navbar from '@/components/Navbar'
+import AdminNavbar from '@/components/AdminNavbar'
 import ChatButton from '@/components/ChatButton'
 
-// Loading spinner
 function LoadingScreen() {
   return (
     <div className="flex flex-col items-center justify-center h-screen bg-neutral-50">
@@ -30,37 +33,46 @@ function LoadingScreen() {
   )
 }
 
-// Protected route wrapper
 function ProtectedRoute({ children }) {
-  const { user, loading } = useAuth()
+  const { user, loading, isAdmin } = useAuth()
 
-  if (loading) {
-    return <LoadingScreen />
-  }
-
-  if (!user) {
-    return <Navigate to="/auth" replace />
-  }
+  if (loading) return <LoadingScreen />
+  if (!user) return <Navigate to="/auth" replace />
+  if (isAdmin) return <Navigate to="/admin" replace />
 
   return children
 }
 
-function AppRoutes() {
-  const { user, loading } = useAuth()
+function AdminRoute({ children }) {
+  const { user, loading, isAdmin } = useAuth()
 
-  if (loading) {
-    return <LoadingScreen />
-  }
+  if (loading) return <LoadingScreen />
+  if (!user) return <Navigate to="/auth" replace />
+  if (!isAdmin) return <Navigate to="/dashboard" replace />
+
+  return children
+}
+
+function AuthRedirect() {
+  const { user, loading, isAdmin } = useAuth()
+
+  if (loading) return <LoadingScreen />
+  if (!user) return <AuthPage />
+  return <Navigate to={isAdmin ? '/admin' : '/dashboard'} replace />
+}
+
+function AppRoutes() {
+  const { user, loading, isAdmin } = useAuth()
+
+  if (loading) return <LoadingScreen />
 
   return (
     <>
-      {user && <Navbar />}
+      {user && (isAdmin ? <AdminNavbar /> : <Navbar />)}
       <Routes>
-        {/* Public routes */}
         <Route path="/" element={<HomePage />} />
-        <Route path="/auth" element={user ? <Navigate to="/dashboard" replace /> : <AuthPage />} />
+        <Route path="/auth" element={<AuthRedirect />} />
 
-        {/* Protected routes */}
         <Route path="/courses" element={
           <ProtectedRoute>
             <div className="pt-16"><CoursesPage /></div>
@@ -107,6 +119,32 @@ function AppRoutes() {
           <ProtectedRoute>
             <div className="pt-16"><AIAssistantPage /></div>
           </ProtectedRoute>
+        } />
+
+        <Route path="/admin" element={
+          <AdminRoute>
+            <div className="pt-16 min-h-screen bg-neutral-950"><AdminPage /></div>
+          </AdminRoute>
+        } />
+        <Route path="/admin/users" element={
+          <AdminRoute>
+            <div className="pt-16 min-h-screen bg-neutral-950"><AdminUsersPage /></div>
+          </AdminRoute>
+        } />
+        <Route path="/admin/courses" element={
+          <AdminRoute>
+            <div className="pt-16 min-h-screen bg-neutral-950"><AdminCoursesPage /></div>
+          </AdminRoute>
+        } />
+        <Route path="/admin/opportunities" element={
+          <AdminRoute>
+            <div className="pt-16 min-h-screen bg-neutral-950"><AdminOpportunitiesPage /></div>
+          </AdminRoute>
+        } />
+        <Route path="/admin/settings" element={
+          <AdminRoute>
+            <div className="pt-16 min-h-screen bg-neutral-950"><AdminSettingsPage /></div>
+          </AdminRoute>
         } />
       </Routes>
     </>
