@@ -2,16 +2,16 @@ import { Users, BookOpen, Search, TrendingUp, UserPlus, Activity } from 'lucide-
 import { useAuth } from '@/context/AuthContext'
 
 const stats = [
-  { icon: Users, label: 'Всего пользователей', value: '128', change: '+12 за месяц', color: 'text-blue-400 bg-blue-500/10' },
-  { icon: BookOpen, label: 'Активных курсов', value: '24', change: '3 на модерации', color: 'text-emerald-400 bg-emerald-500/10' },
-  { icon: Search, label: 'Возможностей', value: '56', change: '5 новых', color: 'text-purple-400 bg-purple-500/10' },
-  { icon: TrendingUp, label: 'Средний прогресс', value: '67%', change: '+4% за неделю', color: 'text-amber-400 bg-amber-500/10' },
+  { icon: Users, label: 'Всего пользователей', value: '0', change: '+0 за месяц', color: 'text-blue-400 bg-blue-500/10' },
+  { icon: BookOpen, label: 'Активных курсов', value: '0', change: 'Все прошли модерацию', color: 'text-emerald-400 bg-emerald-500/10' },
+  { icon: Search, label: 'Возможностей', value: '0', change: 'Не забывайте пополнять, админ братан', color: 'text-purple-400 bg-purple-500/10' },
+  { icon: TrendingUp, label: 'Средний прогресс', value: '0%', change: '+0% за неделю', color: 'text-amber-400 bg-amber-500/10' },
 ]
 
 const recentUsers = [
-  { name: 'Айдана Исакова', email: 'aidana@mail.kz', grade: '10', joined: '2 ч назад' },
-  { name: 'Нурлан Ахметов', email: 'nurlan@mail.kz', grade: '11', joined: '5 ч назад' },
-  { name: 'Диана Сейткали', email: 'diana@mail.kz', grade: '9', joined: '1 д назад' },
+  { name: 'PLACE HOLDER', email: 'aidana@mail.kz', grade: '10', joined: '2 ч назад' },
+  { name: 'Place HOLDER', email: 'nurlan@mail.kz', grade: '11', joined: '5 ч назад' },
+  { name: 'PLACE HolDER', email: 'diana@mail.kz', grade: '9', joined: '1 д назад' },
 ]
 
 const pendingItems = [
@@ -68,7 +68,7 @@ export default function AdminPage() {
           <div className="flex items-center justify-between mb-5">
             <h2 className="text-lg font-semibold text-white flex items-center gap-2">
               <Activity size={20} className="text-amber-400" />
-              На модерации
+              placeholder stuff below, я честно думаю что можно модерацию реально сделать, но вроде бы много займет
             </h2>
           </div>
           <div className="flex flex-col gap-3">
