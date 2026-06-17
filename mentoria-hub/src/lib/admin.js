@@ -1,6 +1,9 @@
 export const ADMIN_EMAILS = [
   'admin@mentoria.kz',
-  'твой_email@gmail.com',
+  'admin2@gmail.com',
+  'admin3@gmail.com',
+  'admin4@gmail.com',
+  'admin5@gmail.com',
 ]
 
 export function isAdminEmail(email) {
