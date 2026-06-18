@@ -471,9 +471,10 @@ export async function getUserProfile(userId) {
     .from('profiles')
     .select('*')
     .eq('id', userId)
-    .single()
-  if (error) throw error
-  return data
+    .single();
+  
+  if (error) throw error;
+  return data;
 }
 
 export async function updateUserGoal(userId, goal) {
@@ -491,9 +492,10 @@ export async function getUserRoadmap(userId) {
     .from('user_roadmaps')
     .select('*')
     .eq('user_id', userId)
-    .maybeSingle()
-  if (error) throw error
-  return data
+    .maybeSingle();
+  
+  if (error) throw error;
+  return data;
 }
 
 export async function saveUserRoadmap(userId, roadmapJson, aiAdvice) {
@@ -505,9 +507,10 @@ export async function saveUserRoadmap(userId, roadmapJson, aiAdvice) {
       ai_advice: aiAdvice,
       updated_at: new Date()
     }, { onConflict: 'user_id' })
-    .select()
-  if (error) throw error
-  return data[0]
+    .select();
+  
+  if (error) throw error;
+  return data[0];
 }
 
 // В самый конец твоего файла src/lib/database.js
@@ -516,17 +519,34 @@ export async function saveUserRoadmap(userId, roadmapJson, aiAdvice) {
 
 // Запрос к нашему созданному API-эндпоинту для работы с LLM
 export async function generateRoadmapViaAI(grade, interests, targetGoal) {
+  // Переводим число класса в строку для ИИ-промпта
+  const normalizedGrade = grade ? `${grade} класс` : '8 класс';
+
   const response = await fetch('/api/roadmap-ai', {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
     },
-    body: JSON.stringify({ grade, interests, targetGoal }),
+    body: JSON.stringify({ grade: normalizedGrade, interests, targetGoal }),
   });
 
   if (!response.ok) {
-    throw new Error('Ошибка при генерации роадмапа через ИИ');
+    throw new Error('Ошибка при генерации роадмапа через Groq');
   }
 
-  return await response.json(); // Возвращает { roadmap: [...], advice: "..." }
+  return await response.json(); 
+}
+export async function updateUserProfileForAi(userId, { grade, interests, targetGoal }) {
+  const { data, error } = await supabase
+    .from('profiles')
+    .update({ 
+      grade: grade ? Number(grade) : null, // Сохраняем как число, чтобы не ломать AuthContext
+      interests: interests || [],        // Сохраняем массив интересов jsonb
+      target_goal: targetGoal             // Сохраняем текстовую цель
+    })
+    .eq('id', userId)
+    .select();
+  
+  if (error) throw error;
+  return data[0];
 }
