@@ -136,7 +136,7 @@ export default function AdminOpportunitiesPage() {
                     <span className="px-2 py-1 bg-primary-500/20 text-primary-400 text-xs rounded-full font-medium">
                       {opp.type}
                     </span>
-                    {opp.is_published ? (
+                    {opp.is_published === true || opp.is_published === 'true' || opp.is_published === 'Yes' ? (
                       <span className="px-2 py-1 bg-green-500/20 text-green-400 text-xs rounded-full font-medium">
                         Активна
                       </span>

@@ -56,7 +56,7 @@ export default function OpportunityBuilder({ opportunity = null, onClose, onSave
         deadline: opportunity.deadline || '',
         link: opportunity.link || '',
         image_url: opportunity.image_url || '',
-        is_published: opportunity.is_published || false,
+        is_published: opportunity.is_published === true || opportunity.is_published === 'true' || opportunity.is_published === 'Yes',
       })
     }
   }, [opportunity])

@@ -113,7 +113,7 @@ export default function AdminCoursesPage() {
                 <div className="flex-1">
                   <div className="flex items-center gap-3 mb-2">
                     <h3 className="text-lg font-semibold text-white">{course.title}</h3>
-                    {course.is_published ? (
+                    {course.is_published === true || course.is_published === 'true' || course.is_published === 'Yes' ? (
                       <span className="px-2 py-1 bg-green-500/20 text-green-400 text-xs rounded-full font-medium">
                         Опубликован
                       </span>

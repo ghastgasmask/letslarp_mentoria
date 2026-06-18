@@ -61,7 +61,7 @@ export default function CourseBuilder({ course = null, onClose, onSave }) {
         subject: course.subject || 'General',
         duration_hours: course.duration_hours,
         image_url: course.image_url || '',
-        is_published: course.is_published,
+        is_published: course.is_published === true || course.is_published === 'true' || course.is_published === 'Yes',
       })
       loadLessons(course.id)
     }
