@@ -1,4 +1,4 @@
-import { Bookmark, ExternalLink } from 'lucide-react'
+import { Bookmark, ExternalLink, Search } from 'lucide-react' // Добавлен Search
 import { useState, useEffect } from 'react'
 import { useAuth } from '@/context/AuthContext'
 import {
@@ -48,6 +48,7 @@ export default function OpportunitiesPage() {
   const [activeCategory, setActiveCategory] = useState('Все')
   const [activeFormat, setActiveFormat] = useState('Все форматы')
   const [activeGrade, setActiveGrade] = useState('Все классы')
+  const [searchQuery, setSearchQuery] = useState('') // Добавлен стейт поиска
   const [saved, setSaved] = useState([])
 
   useEffect(() => {
@@ -79,7 +80,6 @@ export default function OpportunitiesPage() {
     try {
       setLoading(true)
       const data = await getOpportunities()
-      // Filter only published ones safely
       const published = data.filter(op => op.is_published === true || op.is_published === 'true' || op.is_published === 'Yes')
       setOpportunities(published)
     } catch (err) {
@@ -124,20 +124,25 @@ export default function OpportunitiesPage() {
   }
 
   const filtered = opportunities.filter((op) => {
-    // Mapped category name
+    // 1. Фильтр по категории
     const catName = getCategoryName(op.type)
     const catMatch = activeCategory === 'Все' || catName === activeCategory
 
-    // Mapped format
+    // 2. Фильтр по формату
     const dbFormat = op.format === 'Online' ? 'Онлайн' : op.format === 'Offline' ? 'Офлайн' : 'Гибрид'
     const fmtMatch = activeFormat === 'Все форматы' || dbFormat === activeFormat || op.format === activeFormat
 
-    // Grade match check
+    // 3. Фильтр по классу
     const gradeNum = Number(activeGrade)
     const gradeMatch = activeGrade === 'Все классы' ||
       (op.grade_from <= gradeNum && op.grade_to >= gradeNum)
 
-    return catMatch && fmtMatch && gradeMatch
+    // 4. Текстовый поиск (по названию и описанию)
+    const matchesSearch = 
+      (op.title || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
+      (op.description || '').toLowerCase().includes(searchQuery.toLowerCase())
+
+    return catMatch && fmtMatch && gradeMatch && matchesSearch
   })
 
   if (loading) {
@@ -167,7 +172,22 @@ export default function OpportunitiesPage() {
       </div>
 
       {/* Filters */}
-      <div className="bg-white rounded-xl border border-neutral-200 p-5 mb-8 flex flex-col gap-4">
+      <div className="bg-white rounded-xl border border-neutral-200 p-5 mb-8 flex flex-col gap-5">
+        
+        {/* Поисковая строка */}
+        <div className="relative">
+          <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-neutral-400" size={18} />
+          <input
+            type="text"
+            placeholder="Поиск по названию или описанию..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="w-full pl-11 pr-4 py-2.5 bg-neutral-50 border border-neutral-200 rounded-xl text-sm text-neutral-800 placeholder-neutral-400 focus:outline-none focus:border-primary-500 focus:bg-white transition-all duration-150"
+          />
+        </div>
+
+        <hr className="border-neutral-100" />
+
         {/* Category */}
         <div>
           <p className="text-xs font-semibold text-neutral-400 uppercase tracking-wider mb-2">Категория</p>
@@ -186,6 +206,7 @@ export default function OpportunitiesPage() {
             ))}
           </div>
         </div>
+        
         {/* Format + Grade */}
         <div className="flex flex-wrap gap-6">
           <div>

@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Calculator, Languages, Atom, GraduationCap, Code, TrendingUp, BookOpen } from 'lucide-react'
+import { Calculator, Languages, Atom, GraduationCap, Code, TrendingUp, BookOpen, Search } from 'lucide-react' // Добавлен Search
 import { getCourses, getLessonsByCourse, getUserCourseProgresses } from '@/lib/database'
 import { useAuth } from '@/context/AuthContext'
 
@@ -42,6 +42,7 @@ export default function CoursesPage() {
   const [progresses, setProgresses] = useState({})
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
+  const [searchQuery, setSearchQuery] = useState('') // Добавлен стейт поиска
 
   useEffect(() => {
     loadCourses()
@@ -105,6 +106,16 @@ export default function CoursesPage() {
     navigate(`/course/${courseId}`)
   }
 
+  // Фильтрация курсов по ключевым словам
+  const filteredCourses = courses.filter((course) => {
+    const query = searchQuery.toLowerCase()
+    return (
+      (course.title || '').toLowerCase().includes(query) ||
+      (course.description || '').toLowerCase().includes(query) ||
+      (course.category || course.subject || '').toLowerCase().includes(query)
+    )
+  })
+
   if (loading) {
     return (
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
@@ -116,9 +127,21 @@ export default function CoursesPage() {
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
       {/* Header */}
-      <div className="mb-10">
+      <div className="mb-6">
         <h1 className="text-3xl font-bold text-neutral-900 mb-2">Курсы</h1>
         <p className="text-neutral-500 text-lg">Учись в своём темпе — от математики до подготовки к SAT</p>
+      </div>
+
+      {/* Поисковая строка */}
+      <div className="relative mb-8 max-w-md">
+        <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-neutral-400" size={18} />
+        <input
+          type="text"
+          placeholder="Поиск по названию, описанию или теме..."
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+          className="w-full pl-11 pr-4 py-2.5 bg-white border border-neutral-200 rounded-xl text-sm text-neutral-800 placeholder-neutral-400 focus:outline-none focus:border-primary-500 focus:ring-1 focus:ring-primary-500 transition-all duration-150"
+        />
       </div>
 
       {error && (
@@ -127,14 +150,14 @@ export default function CoursesPage() {
         </div>
       )}
 
-      {courses.length === 0 ? (
+      {filteredCourses.length === 0 ? (
         <div className="bg-neutral-50 border border-neutral-200 rounded-2xl p-12 text-center">
-          <div className="text-neutral-500 text-lg mb-4">📚 Нет доступных курсов</div>
-          <p className="text-neutral-600 text-sm">Курсы появятся здесь, когда они будут опубликованы администратором</p>
+          <div className="text-neutral-500 text-lg mb-2">📚 Курсы не найдены</div>
+          <p className="text-neutral-600 text-sm">Попробуйте изменить поисковый запрос</p>
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {courses.map((course, index) => {
+          {filteredCourses.map((course, index) => {
             const Icon = getIconForCategory(course.category || course.subject)
             const accentColor = getAccentColor(index)
             const levelColor = getLevelColor(course.level)
