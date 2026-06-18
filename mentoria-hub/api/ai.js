@@ -28,39 +28,76 @@ module.exports = async (req, res) => {
     const lastUser = userMessages.length ? userMessages[userMessages.length - 1].text : ''
     const combinedPrompt = `${systemPrompt}\n\nUser: ${lastUser}\nAssistant:`
 
-    // If GROQ key present then try to call GROQ LLM API
+    // If GROQ key present then try to call GROQ LLM API using the compound model
     const GROQ_API_KEY = process.env.GROQ_API_KEY || process.env.VITE_GROQ_API_KEY
     if (GROQ_API_KEY) {
       try {
-        const resp = await fetch('https://api.groq.ai/v1/models/groq-1o/outputs', {
+        // Build messages expected by GROQ API: include system prompt first
+        const groqMessages = [
+          { role: 'system', content: systemPrompt },
+          // map incoming messages to {role, content}
+          ...messages.map((m) => ({ role: m.role, content: m.text })),
+        ]
+
+        const body = {
+          messages: groqMessages,
+          model: 'groq/compound',
+          temperature: 1,
+          max_completion_tokens: 1024,
+          top_p: 1,
+          stream: false,
+          stop: null,
+          compound_custom: {
+            tools: {
+              enabled_tools: ['web_search', 'code_interpreter', 'visit_website'],
+            },
+          },
+        }
+
+        const resp = await fetch('https://api.groq.ai/v1/models/groq/compound/outputs', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
             Authorization: `Bearer ${GROQ_API_KEY}`,
           },
-          body: JSON.stringify({
-            input: combinedPrompt,
-            // model-specific params & shit could go here
-          }),
+          body: JSON.stringify(body),
         })
+        const respText = await resp.text()
+        let data = null
+        try {
+          data = JSON.parse(respText)
+        } catch (e) {
+          // non-json response
+        }
 
-        const data = await resp.json()
-        // try to find text in common locations... Json fallback..........
+        if (!resp.ok) {
+          console.error('GROQ non-ok', resp.status, respText)
+          return res.status(502).json({ error: 'GROQ API error', details: respText })
+        }
+
+        // Parse common response shapes
         let text = ''
-        if (data && typeof data === 'object') {
-          if (data.output && Array.isArray(data.output) && data.output[0]) {
+        if (data) {
+          if (typeof data.output_text === 'string' && data.output_text.length) {
+            text = data.output_text
+          } else if (Array.isArray(data.output) && data.output[0]) {
             const o = data.output[0]
             if (o.content && Array.isArray(o.content)) {
-              text = o.content.map((c) => (typeof c === 'string' ? c : c.text || '')).join(' ')
+              text = o.content
+                .map((c) => (typeof c === 'string' ? c : c.text || c.plain_text || ''))
+                .join(' ')
+            } else if (o.text) {
+              text = o.text
             }
+          } else if (data.reply) {
+            text = data.reply
           }
-          if (!text && data.text) text = data.text
         }
-        if (!text) text = JSON.stringify(data)
+
+        if (!text) text = respText || JSON.stringify(data)
 
         return res.status(200).json({ reply: text })
       } catch (err) {
-        // another fallback if GROQ call fails
         console.error('GROQ call failed', err)
       }
     }

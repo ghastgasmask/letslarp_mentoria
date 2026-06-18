@@ -53,8 +53,23 @@ export default function AIAssistantPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ messages: [...messages, userMessage] }),
       })
-      const data = await resp.json()
-      const replyText = data?.reply || 'Не могу ответить (error)'
+      const data = await resp.json().catch(() => null)
+
+      let replyText = 'Не могу ответить (error)'
+      if (!resp.ok) {
+        const errMsg = (data && (data.error || data.message)) || `${resp.status} ${resp.statusText}`
+        const details = data && data.details ? `\n
+Details: ${data.details}` : ''
+        replyText = `Произошла ошибка при запросе к API: ${errMsg}${details}`
+      } else if (data && data.reply) {
+        replyText = data.reply
+      } else if (data && data.output_text) {
+        replyText = data.output_text
+      } else if (data && data.reply_text) {
+        replyText = data.reply_text
+      } else if (typeof data === 'string') {
+        replyText = data
+      }
 
       const assistantMessage = { id: Date.now() + 1, role: 'assistant', text: replyText, time }
       setMessages((prev) => [...prev, assistantMessage])
@@ -62,7 +77,7 @@ export default function AIAssistantPage() {
       const assistantMessage = {
         id: Date.now() + 1,
         role: 'assistant',
-        text: 'Произошла ошибка (error)',
+        text: `Произошла ошибка (error): ${err.message || err}`,
         time,
       }
       setMessages((prev) => [...prev, assistantMessage])
@@ -161,9 +176,10 @@ export default function AIAssistantPage() {
             onClick={handleSend}
             className="btn-primary px-4 py-2.5 flex items-center gap-2 flex-shrink-0 rounded-xl"
             id="ai-send-btn"
+            disabled={loading}
           >
             <Send size={16} />
-            <span className="hidden sm:inline">Отправить</span>
+            <span className="hidden sm:inline">{loading ? 'Пишу...' : 'Отправить'}</span>
           </button>
         </div>
       </div>
