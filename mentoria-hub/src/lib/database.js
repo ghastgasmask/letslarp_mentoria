@@ -94,14 +94,95 @@ export async function getUpcomingOpportunities() {
 }
 
 export async function getLeaderboardStatsByUser(userId) {
-  const { data, error } = await supabase
-    .from('leaderboard')
-    .select('points, courses_completed')
-    .eq('user_id', userId)
-    .maybeSingle()
+  if (!userId) return { points: 0, courses_completed: 0 }
 
-  if (error) throw error
-  return data
+  const [courseResponse, quizResponse] = await Promise.all([
+    supabase
+      .from('course_progress')
+      .select('course_id, progress_percentage')
+      .eq('user_id', userId),
+    supabase
+      .from('quiz_results')
+      .select('score')
+      .eq('user_id', userId),
+  ])
+
+  if (courseResponse.error) throw courseResponse.error
+  if (quizResponse.error) throw quizResponse.error
+
+  const progressPoints = (courseResponse.data || []).reduce(
+    (sum, item) => sum + Number(item.progress_percentage || 0),
+    0
+  )
+
+  const quizPoints = (quizResponse.data || []).reduce(
+    (sum, item) => sum + Number(item.score || 0),
+    0
+  )
+
+  const coursesCompleted = new Set(
+    (courseResponse.data || [])
+      .filter((item) => Number(item.progress_percentage) > 0)
+      .map((item) => item.course_id)
+  ).size
+
+  return {
+    points: Math.round(progressPoints + quizPoints),
+    courses_completed: coursesCompleted,
+  }
+}
+
+export async function getLeaderboardRankings() {
+  const [profilesResponse, progressResponse, quizResponse] = await Promise.all([
+    supabase
+      .from('profiles')
+      .select('id, full_name, role')
+      .eq('role', 'student'),
+    supabase.from('course_progress').select('user_id, course_id, progress_percentage'),
+    supabase.from('quiz_results').select('user_id, score'),
+  ])
+
+  if (profilesResponse.error) throw profilesResponse.error
+  if (progressResponse.error) throw progressResponse.error
+  if (quizResponse.error) throw quizResponse.error
+
+  const scoreMap = {}
+
+  ;(progressResponse.data || []).forEach((item) => {
+    if (!item?.user_id) return
+    const userId = item.user_id
+    if (!scoreMap[userId]) {
+      scoreMap[userId] = { points: 0, courseIds: new Set() }
+    }
+    scoreMap[userId].points += Number(item.progress_percentage || 0)
+    if (Number(item.progress_percentage) > 0 && item.course_id) {
+      scoreMap[userId].courseIds.add(item.course_id)
+    }
+  })
+
+  ;(quizResponse.data || []).forEach((item) => {
+    if (!item?.user_id) return
+    const userId = item.user_id
+    if (!scoreMap[userId]) {
+      scoreMap[userId] = { points: 0, courseIds: new Set() }
+    }
+    scoreMap[userId].points += Number(item.score || 0)
+  })
+
+  const leaderboard = (profilesResponse.data || []).map((profile) => {
+    const stats = scoreMap[profile.id] || { points: 0, courseIds: new Set() }
+    return {
+      user_id: profile.id,
+      full_name: profile.full_name || 'Пользователь',
+      points: Math.round(stats.points),
+      courses: stats.courseIds.size,
+    }
+  })
+
+  return leaderboard.sort((a, b) => {
+    if (b.points !== a.points) return b.points - a.points
+    return a.full_name.localeCompare(b.full_name || '', 'ru')
+  })
 }
 
 // =========================================================================
