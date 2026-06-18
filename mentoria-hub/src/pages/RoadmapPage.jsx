@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { CheckCircle, Circle, Sparkles, Loader2 } from 'lucide-react'
-import { getUserProfile, getUserRoadmap, saveUserRoadmap, updateUserGoal } from '@/services/database' // путь к твоему database.js
+import { getUserProfile, getUserRoadmap, saveUserRoadmap, updateUserGoal } from "@/lib/database"; // путь к твоему database.js
 
 // Стили оформления классов для таймлайна (остаются статичными для дизайна)
 const gradeStyles = {
