@@ -17,6 +17,41 @@ const suggestions = [
   'Составь мне план на лето',
 ]
 
+// parse md
+const parseMarkdown = (text) => {
+  const parts = []
+  let lastIndex = 0
+  
+  // Regex to match **bold** and *italic*
+  const regex = /\*\*(.+?)\*\*|\*(.+?)\*/g
+  let match
+
+  while ((match = regex.exec(text)) !== null) {
+    // Add text before the match
+    if (match.index > lastIndex) {
+      parts.push(text.substring(lastIndex, match.index))
+    }
+
+    // Add the formatted part
+    if (match[1]) {
+      // Bold **text**
+      parts.push(<strong key={`bold-${match.index}`} className="font-bold">{match[1]}</strong>)
+    } else if (match[2]) {
+      // Itali *text*
+      parts.push(<em key={`italic-${match.index}`} className="italic">{match[2]}</em>)
+    }
+
+    lastIndex = regex.lastIndex
+  }
+
+  // Add remaining text
+  if (lastIndex < text.length) {
+    parts.push(text.substring(lastIndex))
+  }
+
+  return parts.length > 0 ? parts : text
+}
+
 export default function AIAssistantPage() {
   const [messages, setMessages] = useState(initialMessages)
   const [input, setInput] = useState('')
@@ -48,7 +83,7 @@ export default function AIAssistantPage() {
         const errMsg = (data && (data.error || data.message)) || `${resp.status} ${resp.statusText}`
         const details = data && data.details ? `\n
 Details: ${data.details}` : ''
-        replyText = `Произошла ошибка при запросе к API: ${errMsg}${details}`
+        replyText = `oshgibka ${errMsg}${details}`
       } else if (data && data.reply) {
         replyText = data.reply
       } else if (data && data.output_text) {
@@ -127,7 +162,7 @@ Details: ${data.details}` : ''
                   ? 'bg-primary-600 text-white rounded-br-md'
                   : 'bg-neutral-100 text-neutral-900 rounded-bl-md'
               }`}>
-                <p className="whitespace-pre-wrap">{msg.text}</p>
+                <p className="whitespace-pre-wrap">{parseMarkdown(msg.text)}</p>
                 <p className={`text-xs mt-1.5 ${msg.role === 'user' ? 'text-primary-200' : 'text-neutral-400'}`}>
                   {msg.time}
                 </p>
@@ -175,7 +210,7 @@ Details: ${data.details}` : ''
             value={input}
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={handleKey}
-            placeholder="Напиши вопрос ассистенту..."
+            placeholder="Напиши вопрос ассистенту, товарищ!"
             rows={1}
             className="flex-1 border border-neutral-200 rounded-xl px-4 py-2.5 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition"
             id="ai-chat-input"

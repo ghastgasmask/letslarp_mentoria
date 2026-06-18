@@ -1,6 +1,40 @@
 import { Bookmark, BookOpen, Trophy, CalendarCheck, Zap, User, Camera } from 'lucide-react'
 import { useAuth } from '@/context/AuthContext'
 
+const greetings = [
+  'Пожаловать добрую, ',
+  'Рад тебя видеть, ',
+  'Норм делишки, ',
+  'Готов поступать в MIT, ',
+  'Хорошая погода, ',
+  'Думаю, сегодня у нас будет прогресс, ',
+  'И жизнь хороша, ',
+  'Эти сообщения рандомизированы, ',
+  'Думаем о твоем поступлении, ',
+  'ВСЕ БУДЕТ НОРМАЛЬНО, ',
+  'Не парься, ',
+  'Солнце светит, ',
+  'Салатик бурмылдатик, ',
+  'Найди себе место в жизни, ',
+  'Не трогай траву, ',
+  'Пошли учиться, ',
+  'Да будет все прекрасно, ',
+  'Отпадно выглядишь, ',
+  'Сногсшибательно выглядишь, ',
+  'Тут около две дюжины рандомных сообщений, ',
+  'Пора учиться, ',
+  'Что нового,  ',
+  'И поиграй в Terraria, ',
+  'Учеба, учеба и учеба, ',
+  'Сдай САТ на 1600, ',
+  'Будет Айлтс на 9.0, ',
+]
+
+const getRandomGreeting = (displayName) => {
+  const greeting = greetings[Math.floor(Math.random() * greetings.length)]
+  return greeting.endsWith(', ') ? greeting + displayName : greeting
+}
+
 const metrics = [
   { icon: Bookmark, label: 'Сохранённых возможностей', value: '5', color: 'text-primary-600 bg-primary-50' },
   { icon: BookOpen, label: 'Активных курсов', value: '3', color: 'text-emerald-600 bg-emerald-50' },
@@ -47,8 +81,8 @@ export default function DashboardPage() {
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
       {/* Header */}
       <div className="mb-10">
-        <h1 className="text-3xl font-bold text-neutral-900 mb-1">Добро пожаловать, {displayName} 👋</h1>
-        <p className="text-neutral-500">Вот что происходит на твоей платформе сегодня</p>
+        <h1 className="text-3xl font-bold text-neutral-900 mb-1">{getRandomGreeting(displayName)}</h1>
+        <p className="text-neutral-500">Вот что происходит на твоей платформе сегодня. (Сообщения сверху рандомны)</p>
       </div>
 
       {/* Profile Section */}
