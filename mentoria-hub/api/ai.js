@@ -42,13 +42,10 @@ export default async function handler(req, res) {
         Authorization: `Bearer ${GROQ_API_KEY}`,
       },
       body: JSON.stringify({
-        model: 'groq/compound',
+        model: 'llama-3.1-8b-instant',
         messages: groqMessages,
         temperature: 1,
-        max_completion_tokens: 1024,
-        compound_custom: {
-          tools: { enabled_tools: ['web_search', 'visit_website'] },
-        },
+        max_completion_tokens: 512,
       }),
     })
 
