@@ -34,7 +34,7 @@ export default async function handler(req, res) {
       ...messages.map((m) => ({ role: m.role, content: m.text })),
     ]
 
-    const resp = await fetch('meta-llama/llama-4-scout-17b-16e-instruct', {
+    const resp = await fetch('https://api.groq.com/openai/v1/chat/completions', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
