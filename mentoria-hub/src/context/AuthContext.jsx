@@ -19,15 +19,20 @@ async function createProfileIfMissing(authUser) {
   const profile = await fetchProfile(authUser.id)
   if (profile) return profile
 
+  // Безопасно достаем данные, даже если пользователь вошел через OAuth (Google/Яндекс)
   const interests = authUser.user_metadata?.interests ?? []
   const full_name = authUser.user_metadata?.full_name ?? ''
+  
+  // Читаем класс из метаданных и переводим в число
+  const rawGrade = authUser.user_metadata?.grade
+  const grade = rawGrade !== undefined && rawGrade !== null ? Number(rawGrade) : null
 
   const { data, error } = await supabase
     .from('profiles')
     .insert({
       id: authUser.id,
       full_name,
-      grade: null,
+      grade,             // Исправлено: теперь берется реальный класс вместо жесткого null
       interests,
       role: 'student',
     })
@@ -72,31 +77,38 @@ export function AuthProvider({ children }) {
   }, [])
 
   const signUp = async (email, password, name, grade, interests, wantsAdmin) => {
+    // Приводим класс к числу сразу для безопасной записи
+    const numericGrade = grade !== undefined && grade !== null ? Number(grade) : null
+    const isAdmin = wantsAdmin && isAdminEmail(email)
+
     const { data, error } = await supabase.auth.signUp({
       email,
       password,
       options: {
-        data: { full_name: name, interests },
+        // Исправлено: сохраняем grade в метаданные сессии Supabase Auth
+        data: { 
+          full_name: name, 
+          grade: isAdmin ? null : numericGrade, 
+          interests: interests ?? [] 
+        },
       },
     })
 
     if (error) throw error
 
     const newUser = data.user ?? data.session?.user
-    const isAdmin = wantsAdmin && isAdminEmail(email)
 
     if (!newUser) {
-      // If Supabase requires email confirmation and does not return the user immediately,
-      // the profile will be created later when the user signs in.
       return { ...data, role: isAdmin ? 'admin' : 'student' }
     }
 
+    // Создаем запись в таблице profiles
     const { error: profileError } = await supabase
       .from('profiles')
       .insert({
         id: newUser.id,
         full_name: name,
-        grade: isAdmin ? null : parseInt(grade),
+        grade: isAdmin ? null : numericGrade, // Записываем корректное число
         interests: interests || [],
         role: isAdmin ? 'admin' : 'student',
       })

@@ -26,31 +26,38 @@ export default function RoadmapPage({ currentUserId }) {
   const [loading, setLoading] = useState(true)
   const [generating, setGenerating] = useState(false)
 
-  useEffect(() => {
-    async function loadData() {
-      if (!currentUserId) return;
-      try {
-        const userProfile = await getUserProfile(currentUserId)
-        setProfile(userProfile)
-        if (userProfile) {
-          setGoal(userProfile.target_goal || '')
-          setSelectedGrade(userProfile.grade ? String(userProfile.grade) : '8')
-          setSelectedInterests(userProfile.interests || [])
-        }
-
-        const savedRoadmap = await getUserRoadmap(currentUserId)
-        if (savedRoadmap) {
-          setRoadmapData(savedRoadmap.roadmap_json)
-          setAiAdvice(savedRoadmap.ai_advice)
-        }
-      } catch (err) {
-        console.error('Ошибка загрузки данных:', err)
-      } finally {
-        setLoading(false)
+useEffect(() => {
+  async function loadData() {
+    if (!currentUserId) return;
+    try {
+      const userProfile = await getUserProfile(currentUserId)
+      setProfile(userProfile)
+      
+      if (userProfile) {
+        // Защита от NULL из базы данных (как на скриншоте)
+        setGoal(userProfile.target_goal || '')
+        
+        // Если в базе NULL (как у Суркова), ставим дефолт "8", иначе приводим к строке
+        setSelectedGrade(userProfile.grade ? String(userProfile.grade) : '8')
+        
+        // Если в базе пустой массив или NULL, ставим пустой массив во избежание краша
+        setSelectedInterests(Array.isArray(userProfile.interests) ? userProfile.interests : [])
       }
+
+      const savedRoadmap = await getUserRoadmap(currentUserId)
+      if (savedRoadmap) {
+        setRoadmapData(savedRoadmap.roadmap_json || [])
+        setAiAdvice(savedRoadmap.ai_advice || '')
+      }
+    } catch (err) {
+      console.error('Ошибка загрузки данных в Роадмапе:', err)
+    } finally {
+      // Снимаем статус загрузки в любом случае, чтобы экран не застывал на "Загрузка профиля..."
+      setLoading(false)
     }
-    loadData()
-  }, [currentUserId])
+  }
+  loadData()
+}, [currentUserId])
 
   // Переключатель чекбоксов интересов
   const handleInterestToggle = (interest) => {
