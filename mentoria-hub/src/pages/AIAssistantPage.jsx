@@ -5,7 +5,7 @@ const initialMessages = [
   {
     id: 1,
     role: 'assistant',
-    text: 'Привет, Айдана! 👋 Я твой персональный помощник на Mentoria Hub. Могу помочь с выбором олимпиад, курсов, расскажу о возможностях и составлю персональный план подготовки.',
+    text: 'Я твой персональный помощник на Mentoria Hub. Могу помочь с выбором олимпиад, курсов, расскажу о возможностях. Для составления планов присутсвует другой ИИ',
     time: '11:30',
   },
   {
@@ -17,7 +17,7 @@ const initialMessages = [
   {
     id: 3,
     role: 'assistant',
-    text: 'Отличный вопрос! Для 10 класса по математике я рекомендую:\n\n📌 **Республиканская олимпиада по математике** — дедлайн 20 июня. Хороший шанс заявить о себе на национальном уровне.\n\n📌 **Международная математическая олимпиада (IMO)** — сначала нужно пройти отбор через республиканский этап.\n\n📌 **Олимпиада «Кенгуру»** — онлайн, доступна всем ученикам.\n\nХочешь, я подробнее расскажу о любой из них или помогу составить план подготовки? 🎯',
+    text: 'Это шаблонный ответ. Изменить позже......',
     time: '11:31',
   },
 ]
@@ -32,23 +32,43 @@ const suggestions = [
 export default function AIAssistantPage() {
   const [messages, setMessages] = useState(initialMessages)
   const [input, setInput] = useState('')
+  const [loading, setLoading] = useState(false)
 
-  const handleSend = () => {
+  const handleSend = async () => {
     const text = input.trim()
     if (!text) return
     const now = new Date()
     const time = `${now.getHours()}:${String(now.getMinutes()).padStart(2, '0')}`
-    setMessages((prev) => [
-      ...prev,
-      { id: Date.now(), role: 'user', text, time },
-      {
+
+    // Optimistically add user's message
+    const userMessage = { id: Date.now(), role: 'user', text, time }
+    setMessages((prev) => [...prev, userMessage])
+    setInput('')
+
+    // Call server API which will use GROQ when available
+    setLoading(true)
+    try {
+      const resp = await fetch('/api/ai', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ messages: [...messages, userMessage] }),
+      })
+      const data = await resp.json()
+      const replyText = data?.reply || 'Не могу ответить (error)'
+
+      const assistantMessage = { id: Date.now() + 1, role: 'assistant', text: replyText, time }
+      setMessages((prev) => [...prev, assistantMessage])
+    } catch (err) {
+      const assistantMessage = {
         id: Date.now() + 1,
         role: 'assistant',
-        text: 'Спасибо за вопрос! Это демо-версия ассистента. В полной версии я подключён к базе данных Mentoria Hub и дам тебе точный персональный ответ. Пока ты можешь изучить каталог возможностей и курсов! 😊',
+        text: 'Произошла ошибка (error)',
         time,
-      },
-    ])
-    setInput('')
+      }
+      setMessages((prev) => [...prev, assistantMessage])
+    } finally {
+      setLoading(false)
+    }
   }
 
   const handleKey = (e) => {
