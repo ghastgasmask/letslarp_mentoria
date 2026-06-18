@@ -7,19 +7,7 @@ const initialMessages = [
     role: 'assistant',
     text: 'Я твой персональный помощник на Mentoria Hub. Могу помочь с выбором олимпиад, курсов, расскажу о возможностях. Для составления планов присутсвует другой ИИ',
     time: '11:30',
-  },
-  {
-    id: 2,
-    role: 'user',
-    text: 'Какие олимпиады подходят для 10 класса по математике?',
-    time: '11:31',
-  },
-  {
-    id: 3,
-    role: 'assistant',
-    text: 'Это шаблонный ответ. Изменить позже......',
-    time: '11:31',
-  },
+  }
 ]
 
 const suggestions = [
@@ -109,7 +97,7 @@ Details: ${data.details}` : ''
             <h1 className="text-2xl font-bold text-neutral-900">AI-ассистент</h1>
             <div className="flex items-center gap-1.5 text-xs text-emerald-600 font-medium">
               <span className="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-pulse" />
-              Онлайн
+              Добрый день. Я онлайн
             </div>
           </div>
         </div>
@@ -146,6 +134,26 @@ Details: ${data.details}` : ''
               </div>
             </div>
           ))}
+
+          {/* Loading shit LOL!!!!!!!! */}
+          {loading && (
+            <div className="flex items-end gap-3">
+              {/* Avatar */}
+              <div className="flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold bg-gradient-to-br from-primary-500 to-primary-700 text-white">
+                <Bot size={16} />
+              </div>
+
+              {/* Typing Bubble */}
+              <div className="max-w-[75%] rounded-2xl px-4 py-3 text-sm leading-relaxed bg-neutral-100 text-neutral-900 rounded-bl-md flex items-center gap-1">
+                <span>Ассистент пишет</span>
+                <span className="flex gap-1">
+                  <span className="w-1.5 h-1.5 bg-neutral-400 rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
+                  <span className="w-1.5 h-1.5 bg-neutral-400 rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
+                  <span className="w-1.5 h-1.5 bg-neutral-400 rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
+                </span>
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Suggestions */}
