@@ -348,7 +348,10 @@ export async function deleteOpportunity(id) {
   if (error) throw error
 }
 
-// Quiz functions
+// =========================================================================
+// 6. QUIZZES & QUIZ RESULTS
+// =========================================================================
+
 export async function getQuizzesByLesson(lessonId) {
   const { data, error } = await supabase
     .from('quizzes')
@@ -419,4 +422,161 @@ export async function getUserQuizResults(userId, lessonId) {
   
   if (error) throw error
   return data || []
+}
+
+// =========================================================================
+// 7. COURSE PROGRESS
+// =========================================================================
+
+export async function getCourseProgress(userId, courseId) {
+  const { data, error } = await supabase
+    .from('course_progress')
+    .select('*')
+    .eq('user_id', userId)
+    .eq('course_id', courseId)
+    .maybeSingle()
+  
+  if (error) throw error
+  return data
+}
+
+export async function updateCourseProgress(userId, courseId, progressData) {
+  const { data, error } = await supabase
+    .from('course_progress')
+    .upsert({
+      user_id: userId,
+      course_id: courseId,
+      ...progressData,
+      last_accessed_at: new Date(),
+    }, { onConflict: 'user_id,course_id' })
+    .select()
+  
+  if (error) throw error
+  return data[0]
+}
+
+export async function getUserCourseProgresses(userId) {
+  const { data, error } = await supabase
+    .from('course_progress')
+    .select('*')
+    .eq('user_id', userId)
+  
+  if (error) throw error
+  return data || []
+}
+// В конец database.js
+
+export async function getUserProfile(userId) {
+  const { data, error } = await supabase
+    .from('profiles')
+    .select('*')
+    .eq('id', userId)
+    .single()
+  if (error) throw error
+  return data
+}
+
+export async function updateUserGoal(userId, goal) {
+  const { data, error } = await supabase
+    .from('profiles')
+    .update({ target_goal: goal })
+    .eq('id', userId)
+    .select()
+  if (error) throw error
+  return data[0]
+}
+
+export async function getUserRoadmap(userId) {
+  const { data, error } = await supabase
+    .from('user_roadmaps')
+    .select('*')
+    .eq('user_id', userId)
+    .maybeSingle()
+  if (error) throw error
+  return data
+}
+
+export async function saveUserRoadmap(userId, roadmapJson, aiAdvice) {
+  const { data, error } = await supabase
+    .from('user_roadmaps')
+    .upsert({
+      user_id: userId,
+      roadmap_json: roadmapJson,
+      ai_advice: aiAdvice,
+      updated_at: new Date()
+    }, { onConflict: 'user_id' })
+    .select()
+  if (error) throw error
+  return data[0]
+}
+
+// В самый конец твоего файла src/lib/database.js
+
+// 1. Получить профиль студента (чтобы узнать его интересы и класс по умолчанию)
+export async function getUserProfile(userId) {
+  const { data, error } = await supabase
+    .from('profiles')
+    .select('*')
+    .eq('id', userId)
+    .single();
+  
+  if (error) throw error;
+  return data;
+}
+
+// 2. Обновить целевой ВУЗ / цель ученика в профиле
+export async function updateUserGoal(userId, goal) {
+  const { data, error } = await supabase
+    .from('profiles')
+    .update({ target_goal: goal }) // Мы добавили эту колонку через SQL ALTER в предыдущем шаге
+    .eq('id', userId)
+    .select();
+  
+  if (error) throw error;
+  return data[0];
+}
+
+// 3. Получить уже сохраненный персональный роадмап из таблицы user_roadmaps
+export async function getUserRoadmap(userId) {
+  const { data, error } = await supabase
+    .from('user_roadmaps')
+    .select('*')
+    .eq('user_id', userId)
+    .maybeSingle();
+  
+  if (error) throw error;
+  return data;
+}
+
+// 4. Перезаписать/сохранить роадмап и совет ИИ при генерации или изменении чекбоксов
+export async function saveUserRoadmap(userId, roadmapJson, aiAdvice) {
+  const { data, error } = await supabase
+    .from('user_roadmaps')
+    .upsert({
+      user_id: userId,
+      roadmap_json: roadmapJson,
+      ai_advice: aiAdvice,
+      updated_at: new Date()
+    }, { onConflict: 'user_id' })
+    .select();
+  
+  if (error) throw error;
+  return data[0];
+}
+
+// Запрос к нашему созданному API-эндпоинту для работы с LLM
+export async function generateRoadmapViaAI(grade, interests, targetGoal) {
+  const response = await fetch('/api/roadmap-ai', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ grade, interests, targetGoal }),
+  });
+
+  if (!response.ok) {
+    throw new Error('Ошибка при генерации роадмапа через ИИ');
+  }
+
+  return await response.json(); // Возвращает { roadmap: [...], advice: "..." }
 }
