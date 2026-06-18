@@ -9,19 +9,24 @@ test@example.com
 VERCEL:
 https://letslarp-mentoria.vercel.app/
 
-YOUTUBE LINK FOR VIDEO 1 (2 MINS, MORE PRESENTATION)
+YOUTUBE LINK FOR VIDEO 1 (2 MINS, MORE PRESENTATION):
+https://youtu.be/5k_wgI-qWAY
 
-DRIVE LINK TO PRESENTATION VIDEO:
+DRIVE LINK TO PRESENTATION VIDEO, SAME AS THE VIDEO MENTIONED СВЕРХУ
 https://drive.google.com/file/d/11P7LbEUzcZuZu9XtsVUSg_0wWuwt63vo/view?ts=6a343fc2
 
-YOUTUBE LINK FOR VIDEO 2 (2 MINS, MORE DEMONSTRATION)
+YOUTUBE LINK FOR VIDEO 2 (2 MINS, MORE DEMONSTRATION):
+https://youtu.be/00Thn6MQkiY
 
 CANVA LINK (PRESENTATION):
 https://www.canva.com/design/DAHM7mT_lXY/yZtfH9LtIqxDDKW6gDk96w/edit
 
-PDF TO PRESENTATION UPLOADED TOO, DOWNLODADED FROM CANVA:
 
+PDF TO PRESENTATION UPLOADED TOO, DOWNLODADED FROM CANVA, CHECK Project "Mentoria Hub".pdf !!!!!!!
 
+**!!!!!!!!!!!!!!!!!!!! СОВЕТ: ПОПРОБУЙТЕ РЕАЛЬНО СОЗДАТЬ КУРС ИЛИ ВОЗМОЖНОСТЬ, И ПОТОМ ПОСМОТРЕТЬ, ЕСТЬ ЛИ ОН С ЮЗЕРСКОЙ ЧАСТИ !!!!!!!!!!!!!!!!!!!!!!!!**
+**!!!!!!!!!!!!!!!!!!!! СОВЕТ: ПОПРОБУЙТЕ РЕАЛЬНО СОЗДАТЬ КУРС ИЛИ ВОЗМОЖНОСТЬ, И ПОТОМ ПОСМОТРЕТЬ, ЕСТЬ ЛИ ОН С ЮЗЕРСКОЙ ЧАСТИ !!!!!!!!!!!!!!!!!!!!!!!!**
+**!!!!!!!!!!!!!!!!!!!! И ПОПРОБУЙТЕ НАШ ИИ, ОН НАХОДИТСЯ В ПРАВОЙ НИЖНЕЙ ЧАСТИ В ПРАКТИЧЕСКИ ЛЮБОЙ СТРАНИЦЕ, ОН РЕАЛЬНО КРУТОЙ !!!!!!!!!!!!!!!!!!!!!!!!**
 
 # Mentoria Hub
 
@@ -29,7 +34,7 @@ PDF TO PRESENTATION UPLOADED TOO, DOWNLODADED FROM CANVA:
 
 Идея простая: большинство школьников даже не узнают о половине возможностей, на которые реально могли бы претендовать, потому что информация разбросана по Telegram-каналам, школьным объявлениям и сарафанному радио. Mentoria Hub собирает всё это в одном месте с поиском, плюс даёт учебный путь, чтобы реально подготовиться.
 
-Сделано на [название хакатона] примерно за 4 дня.
+Сделано на MENTORIA HUB примерно за 1 день.
 
 ## Что реально работает
 
