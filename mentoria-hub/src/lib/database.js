@@ -1,8 +1,6 @@
 import { supabase } from './supabase'
 
-// =========================================================================
-// 1. FILE UPLOAD & STORAGE
-// =========================================================================
+// ==================== File Upload ====================
 
 export async function uploadFile(file, folder = 'general') {
   const fileExt = file.name.split('.').pop()
@@ -28,6 +26,7 @@ export async function deleteFile(fileUrl) {
   if (!fileUrl) return
 
   try {
+    // Extract path from the full URL
     const url = new URL(fileUrl)
     const pathParts = url.pathname.split('/storage/v1/object/public/uploads/')
     if (pathParts.length < 2) return
@@ -42,71 +41,6 @@ export async function deleteFile(fileUrl) {
     console.error('Error deleting file:', err)
   }
 }
-
-// =========================================================================
-// 2. DASHBOARD, ANALYTICS & LEADERBOARD
-// =========================================================================
-
-export async function getPublishedCoursesCount() {
-  const { count, error } = await supabase
-    .from('courses')
-    .select('id', { count: 'exact', head: true })
-    .eq('is_published', true)
-
-  if (error) throw error
-  return count ?? 0
-}
-
-export async function getPublishedOpportunitiesCount() {
-  const { count, error } = await supabase
-    .from('opportunities')
-    .select('id', { count: 'exact', head: true })
-    .eq('is_published', true)
-
-  if (error) throw error
-  return count ?? 0
-}
-
-export async function getUpcomingOpportunityDeadline() {
-  const { data, error } = await supabase
-    .from('opportunities')
-    .select('deadline')
-    .eq('is_published', true)
-    .not('deadline', 'is', null)
-    .order('deadline', { ascending: true })
-    .limit(1)
-
-  if (error) throw error
-  return data?.[0]?.deadline ?? null
-}
-
-export async function getUpcomingOpportunities() {
-  const { data, error } = await supabase
-    .from('opportunities')
-    .select('id, title, deadline, category')
-    .eq('is_published', true)
-    .not('deadline', 'is', null)
-    .order('deadline', { ascending: true })
-    .limit(5)
-
-  if (error) throw error
-  return data || []
-}
-
-export async function getLeaderboardStatsByUser(userId) {
-  const { data, error } = await supabase
-    .from('leaderboard')
-    .select('points, courses_completed')
-    .eq('user_id', userId)
-    .maybeSingle()
-
-  if (error) throw error
-  return data
-}
-
-// =========================================================================
-// 3. COURSES
-// =========================================================================
 
 export async function getCourses() {
   const { data, error } = await supabase
@@ -166,10 +100,6 @@ export async function deleteCourse(id) {
   if (error) throw error
 }
 
-// =========================================================================
-// 4. LESSONS
-// =========================================================================
-
 export async function getLessonsByCourse(courseId) {
   const { data, error } = await supabase
     .from('lessons')
@@ -216,10 +146,6 @@ export async function deleteLesson(id) {
   
   if (error) throw error
 }
-
-// =========================================================================
-// 5. OPPORTUNITIES
-// =========================================================================
 
 export async function getOpportunities() {
   const { data, error } = await supabase
@@ -279,10 +205,7 @@ export async function deleteOpportunity(id) {
   if (error) throw error
 }
 
-// =========================================================================
-// 6. QUIZZES & QUIZ RESULTS
-// =========================================================================
-
+// Quiz functions
 export async function getQuizzesByLesson(lessonId) {
   const { data, error } = await supabase
     .from('quizzes')
@@ -355,9 +278,7 @@ export async function getUserQuizResults(userId, lessonId) {
   return data || []
 }
 
-// =========================================================================
-// 7. COURSE PROGRESS
-// =========================================================================
+// ==================== Course Progress ====================
 
 export async function getCourseProgress(userId, courseId) {
   const { data, error } = await supabase
