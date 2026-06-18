@@ -1,5 +1,3 @@
-
-
 const SYSTEM_PROMPT = `Ты — полезный и доброжелательный ассистент для Mentoria Hub.
 Отвечай на вопросы студентов ясно и по делу, давай рекомендации по олимпиадам, курсам и планам подготовки.
 Если пользователь просит личные рекомендации, предлагай уточняющие вопросы (класс, цели, текущее расписание).
@@ -29,9 +27,12 @@ export default async function handler(req, res) {
   }
 
   try {
+    // Берём только последние 5 сообщений, чтобы не упереться в лимит размера
+    const recentMessages = messages.slice(-5)
+
     const groqMessages = [
       { role: 'system', content: SYSTEM_PROMPT },
-      ...messages.map((m) => ({ role: m.role, content: m.text })),
+      ...recentMessages.map((m) => ({ role: m.role, content: m.text })),
     ]
 
     const resp = await fetch('https://api.groq.com/openai/v1/chat/completions', {
