@@ -76,67 +76,59 @@ export function AuthProvider({ children }) {
     return () => subscription.unsubscribe()
   }, [])
 
-// src/context/AuthContext.jsx
+  const signUp = async (email, password, name, grade, interests, wantsAdmin) => {
+    // Приводим класс к числу сразу для безопасной записи
+    const numericGrade = grade !== undefined && grade !== null ? Number(grade) : null
+    const isAdmin = wantsAdmin && isAdminEmail(email)
 
-// Принимаем данные одним объектом — теперь порядок аргументов вообще не важен!
-const signUp = async ({ email, password, name, grade, interests, wantsAdmin }) => {
-  const numericGrade = grade !== undefined && grade !== null ? Number(grade) : null
-  const isAdmin = wantsAdmin && isAdminEmail(email)
-  const finalInterests = Array.isArray(interests) ? interests : []
-
-  console.log("=== РЕГИСТРАЦИЯ ИНИЦИИРОВАНА ===");
-  console.log("Данные для записи:", { name, numericGrade, finalInterests, isAdmin });
-
-  const { data, error } = await supabase.auth.signUp({
-    email,
-    password,
-    options: {
-      data: { 
-        full_name: name, 
-        grade: isAdmin ? null : numericGrade, 
-        interests: finalInterests
+    const { data, error } = await supabase.auth.signUp({
+      email,
+      password,
+      options: {
+        // Исправлено: сохраняем grade в метаданные сессии Supabase Auth
+        data: { 
+          full_name: name, 
+          grade: isAdmin ? null : numericGrade, 
+          interests: interests ?? [] 
+        },
       },
-    },
-  })
-
-  if (error) throw error
-
-  const newUser = data.user ?? data.session?.user
-
-  if (!newUser) {
-    return { ...data, role: isAdmin ? 'admin' : 'student' }
-  }
-
-  // Напрямую вставляем данные в таблицу profiles
-  const { error: profileError } = await supabase
-    .from('profiles')
-    .insert({
-      id: newUser.id,
-      full_name: name,
-      grade: isAdmin ? null : numericGrade,
-      interests: finalInterests, // Железобетонно передаем массив
-      role: isAdmin ? 'admin' : 'student',
     })
 
-  if (profileError) {
-    console.error("Ошибка вставки профиля в БД:", profileError);
-    throw profileError
-  }
+    if (error) throw error
 
-  if (!isAdmin) {
-    const { error: leaderboardError } = await supabase
-      .from('leaderboard')
+    const newUser = data.user ?? data.session?.user
+
+    if (!newUser) {
+      return { ...data, role: isAdmin ? 'admin' : 'student' }
+    }
+
+    // Создаем запись в таблице profiles
+    const { error: profileError } = await supabase
+      .from('profiles')
       .insert({
-        user_id: newUser.id,
-        points: 0,
-        courses_completed: 0,
+        id: newUser.id,
+        full_name: name,
+        grade: isAdmin ? null : numericGrade, // Записываем корректное число
+        interests: interests || [],
+        role: isAdmin ? 'admin' : 'student',
       })
 
-    if (leaderboardError) console.error("Ошибка лидерборда:", leaderboardError)
-  }
+    if (profileError) throw profileError
 
-  return { ...data, role: isAdmin ? 'admin' : 'student' }
-}
+    if (!isAdmin) {
+      const { error: leaderboardError } = await supabase
+        .from('leaderboard')
+        .insert({
+          user_id: newUser.id,
+          points: 0,
+          courses_completed: 0,
+        })
+
+      if (leaderboardError) throw leaderboardError
+    }
+
+    return { ...data, role: isAdmin ? 'admin' : 'student' }
+  }
 
   const signIn = async (email, password) => {
     const { data, error } = await supabase.auth.signInWithPassword({
