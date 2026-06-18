@@ -20,6 +20,9 @@ async function enrichUser(authUser) {
   const profile = await fetchProfile(authUser.id)
   return {
     ...authUser,
+    full_name: profile?.full_name ?? authUser?.user_metadata?.full_name ?? '',
+    grade: profile?.grade ?? null,
+    interests: profile?.interests ?? [],
     role: profile?.role ?? 'student',
   }
 }
@@ -95,7 +98,7 @@ export function AuthProvider({ children }) {
     const profile = await fetchProfile(data.user.id)
     const role = profile?.role ?? 'student'
 
-    setUser({ ...data.user, role })
+    setUser({ ...data.user, ...profile, role })
 
     return { ...data, role }
   }
@@ -105,10 +108,34 @@ export function AuthProvider({ children }) {
     if (error) throw error
   }
 
+  const updateProfile = async ({ full_name, grade }) => {
+    const userId = user?.id
+    if (!userId) throw new Error('Пользователь не авторизован')
+
+    const { error: authError } = await supabase.auth.updateUser({
+      data: {
+        full_name,
+      },
+    })
+    if (authError) throw authError
+
+    const { error: profileError } = await supabase
+      .from('profiles')
+      .update({
+        full_name,
+        grade: grade !== undefined ? Number(grade) : null,
+      })
+      .eq('id', userId)
+
+    if (profileError) throw profileError
+
+    setUser((prevUser) => prevUser ? { ...prevUser, full_name, grade: grade !== undefined ? Number(grade) : prevUser.grade } : prevUser)
+  }
+
   const isAdmin = user?.role === 'admin'
 
   return (
-    <AuthContext.Provider value={{ user, loading, isAdmin, signUp, signIn, signOut }}>
+    <AuthContext.Provider value={{ user, loading, isAdmin, signUp, signIn, signOut, updateProfile }}>
       {children}
     </AuthContext.Provider>
   )
