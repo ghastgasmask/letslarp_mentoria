@@ -4,11 +4,13 @@ import { useAuth } from '@/context/AuthContext'
 import {
   getCourses,
   getLessonsByCourse,
+  getCourseProgress,
   getPublishedCoursesCount,
   getPublishedOpportunitiesCount,
   getLeaderboardStatsByUser,
   getUpcomingOpportunityDeadline,
   getUpcomingOpportunities,
+  getSavedOpportunityDetails,
 } from '@/lib/database'
 
 const greetings = [
@@ -87,6 +89,9 @@ export default function DashboardPage() {
   const [coursesLoading, setCoursesLoading] = useState(true)
   const [coursesError, setCoursesError] = useState(null)
   const [upcomingDeadlines, setUpcomingDeadlines] = useState([])
+  const [savedOpportunities, setSavedOpportunities] = useState([])
+  const [savedLoading, setSavedLoading] = useState(true)
+  const [savedError, setSavedError] = useState(null)
 
   const displayName = user?.full_name || user?.user_metadata?.full_name || user?.email?.split('@')[0] || 'Пользователь'
   const initials = String(displayName).slice(0, 2).toUpperCase()
@@ -148,7 +153,27 @@ export default function DashboardPage() {
 
     loadStats()
     loadDeadlines()
+    loadSavedOpportunities()
   }, [user?.id])
+
+  const loadSavedOpportunities = async () => {
+    if (!user?.id) {
+      setSavedOpportunities([])
+      setSavedLoading(false)
+      return
+    }
+
+    try {
+      setSavedLoading(true)
+      setSavedError(null)
+      const saved = await getSavedOpportunityDetails(user.id)
+      setSavedOpportunities(saved)
+    } catch (error) {
+      setSavedError(error?.message ?? String(error))
+    } finally {
+      setSavedLoading(false)
+    }
+  }
 
   useEffect(() => {
     const loadMyCourses = async () => {
@@ -159,18 +184,41 @@ export default function DashboardPage() {
         const allCourses = await getCourses()
         const publishedCourses = allCourses.filter((course) => course.is_published)
 
-        const coursesWithStats = await Promise.all(
-          publishedCourses.slice(0, 3).map(async (course) => {
-            const lessons = await getLessonsByCourse(course.id)
-            return {
-              ...course,
-              lessonCount: lessons.length,
-              progress: Number(course.progress) || 0,
-            }
-          })
-        )
+        // If user is signed in, include only courses where the user completed at least one lesson
+        const filtered = []
 
-        setMyCourses(coursesWithStats)
+        for (const course of publishedCourses) {
+          try {
+            const lessons = await getLessonsByCourse(course.id)
+            const lessonCount = lessons.length
+
+            let hasCompleted = false
+            if (user?.id) {
+              const progress = await getCourseProgress(user.id, course.id)
+              const completedIds = progress?.completed_lesson_ids || []
+              hasCompleted = (completedIds.length || 0) > 0
+            }
+
+            if (user?.id) {
+              if (hasCompleted) {
+                const userProgress = await getCourseProgress(user.id, course.id)
+                filtered.push({
+                  ...course,
+                  lessonCount,
+                  progress: Number(userProgress?.progress_percentage) || 0,
+                })
+              }
+            } else {
+              // no user: don't show any "my courses"
+            }
+          } catch (err) {
+            // ignore per-course errors but log
+            console.error('Ошибка при загрузке курса:', course.id, err)
+          }
+          if (filtered.length >= 3) break
+        }
+
+        setMyCourses(filtered)
       } catch (error) {
         setCoursesError(error?.message ?? String(error))
       } finally {
@@ -179,7 +227,7 @@ export default function DashboardPage() {
     }
 
     loadMyCourses()
-  }, [])
+  }, [user?.id])
 
   const handleProfileChange = (field, value) => {
     setProfileData((prev) => ({ ...prev, [field]: value }))
@@ -372,16 +420,26 @@ export default function DashboardPage() {
           <div className="card p-6">
             <h2 className="text-lg font-semibold text-neutral-900 mb-5">Сохранённые возможности</h2>
             <div className="flex flex-col gap-3">
-              {savedOpportunities.map((op) => (
-                <div key={op.title} className="flex items-center gap-3 p-3 rounded-lg bg-neutral-50 hover:bg-neutral-100 transition-colors duration-150">
-                  <Bookmark size={16} className="text-primary-500 flex-shrink-0" fill="currentColor" />
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium text-neutral-800 truncate">{op.title}</p>
-                    <p className="text-xs text-neutral-400">Дедлайн: {op.deadline}</p>
+              {savedLoading ? (
+                <div className="text-neutral-500 text-sm">Загрузка сохранённых возможностей...</div>
+              ) : savedError ? (
+                <div className="text-red-500 text-sm">Ошибка: {savedError}</div>
+              ) : savedOpportunities.length === 0 ? (
+                <div className="text-neutral-500 text-sm">У вас ещё нет сохранённых возможностей.</div>
+              ) : (
+                savedOpportunities.map((op) => (
+                  <div key={op.id} className="flex items-center gap-3 p-3 rounded-lg bg-neutral-50 hover:bg-neutral-100 transition-colors duration-150">
+                    <Bookmark size={16} className="text-primary-500 flex-shrink-0" fill="currentColor" />
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium text-neutral-800 truncate">{op.title}</p>
+                      <p className="text-xs text-neutral-400">Дедлайн: {formatDeadline(op.deadline)}</p>
+                    </div>
+                    <span className={`badge flex-shrink-0 ${op.category ? 'bg-blue-100 text-blue-700' : 'bg-neutral-100 text-neutral-600'}`}>
+                      {op.type || op.category || 'Метка'}
+                    </span>
                   </div>
-                  <span className={`badge flex-shrink-0 ${op.color}`}>{op.category}</span>
-                </div>
-              ))}
+                ))
+              )}
             </div>
           </div>
 

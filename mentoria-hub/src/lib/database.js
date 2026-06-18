@@ -231,6 +231,62 @@ export async function getOpportunities() {
   return data || []
 }
 
+export async function getSavedOpportunities(userId) {
+  const { data, error } = await supabase
+    .from('saved_opportunities')
+    .select('opportunity_id')
+    .eq('user_id', userId)
+
+  if (error) throw error
+  return (data || []).map((item) => item.opportunity_id)
+}
+
+export async function getSavedOpportunityDetails(userId) {
+  const { data, error } = await supabase
+    .from('saved_opportunities')
+    .select('opportunity_id')
+    .eq('user_id', userId)
+
+  if (error) throw error
+  const ids = (data || []).map((item) => item.opportunity_id)
+  if (ids.length === 0) return []
+
+  const { data: opportunities, error: opportunitiesError } = await supabase
+    .from('opportunities')
+    .select('*')
+    .in('id', ids)
+    .order('deadline', { ascending: true })
+
+  if (opportunitiesError) throw opportunitiesError
+  return opportunities || []
+}
+
+export async function saveSavedOpportunity(userId, opportunityId) {
+  const { data, error } = await supabase
+    .from('saved_opportunities')
+    .upsert(
+      {
+        user_id: userId,
+        opportunity_id: opportunityId,
+      },
+      { onConflict: ['user_id', 'opportunity_id'], ignoreDuplicates: true }
+    )
+    .select()
+
+  if (error) throw error
+  return data?.[0] ?? null
+}
+
+export async function removeSavedOpportunity(userId, opportunityId) {
+  const { error } = await supabase
+    .from('saved_opportunities')
+    .delete()
+    .eq('user_id', userId)
+    .eq('opportunity_id', opportunityId)
+
+  if (error) throw error
+}
+
 export async function getOpportunityById(id) {
   const { data, error } = await supabase
     .from('opportunities')
@@ -240,6 +296,19 @@ export async function getOpportunityById(id) {
   
   if (error) throw error
   return data
+}
+
+export async function getOpportunitiesInRange(startIso, endIso) {
+  const { data, error } = await supabase
+    .from('opportunities')
+    .select('id, title, deadline, category, type, is_published')
+    .gte('deadline', startIso)
+    .lte('deadline', endIso)
+    .eq('is_published', true)
+    .order('deadline', { ascending: true })
+
+  if (error) throw error
+  return data || []
 }
 
 export async function createOpportunity(opportunityData) {
