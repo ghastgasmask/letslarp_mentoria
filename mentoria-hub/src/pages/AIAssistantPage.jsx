@@ -5,21 +5,9 @@ const initialMessages = [
   {
     id: 1,
     role: 'assistant',
-    text: 'Привет, Айдана! 👋 Я твой персональный помощник на Mentoria Hub. Могу помочь с выбором олимпиад, курсов, расскажу о возможностях и составлю персональный план подготовки.',
-    time: '11:30',
-  },
-  {
-    id: 2,
-    role: 'user',
-    text: 'Какие олимпиады подходят для 10 класса по математике?',
-    time: '11:31',
-  },
-  {
-    id: 3,
-    role: 'assistant',
-    text: 'Отличный вопрос! Для 10 класса по математике я рекомендую:\n\n📌 **Республиканская олимпиада по математике** — дедлайн 20 июня. Хороший шанс заявить о себе на национальном уровне.\n\n📌 **Международная математическая олимпиада (IMO)** — сначала нужно пройти отбор через республиканский этап.\n\n📌 **Олимпиада «Кенгуру»** — онлайн, доступна всем ученикам.\n\nХочешь, я подробнее расскажу о любой из них или помогу составить план подготовки? 🎯',
-    time: '11:31',
-  },
+    text: 'Я твой персональный помощник на Mentoria Hub. Могу помочь с выбором олимпиад, курсов, расскажу о возможностях. Для составления планов присутсвует другой ИИ',
+    time: '',
+  }
 ]
 
 const suggestions = [
@@ -32,23 +20,58 @@ const suggestions = [
 export default function AIAssistantPage() {
   const [messages, setMessages] = useState(initialMessages)
   const [input, setInput] = useState('')
+  const [loading, setLoading] = useState(false)
 
-  const handleSend = () => {
+  const handleSend = async () => {
     const text = input.trim()
     if (!text) return
     const now = new Date()
     const time = `${now.getHours()}:${String(now.getMinutes()).padStart(2, '0')}`
-    setMessages((prev) => [
-      ...prev,
-      { id: Date.now(), role: 'user', text, time },
-      {
+
+    // Optimistically add user's message
+    const userMessage = { id: Date.now(), role: 'user', text, time }
+    setMessages((prev) => [...prev, userMessage])
+    setInput('')
+
+    // Call server API which will use GROQ when available
+    setLoading(true)
+    try {
+      const resp = await fetch('/api/ai', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ messages: [...messages, userMessage] }),
+      })
+      const data = await resp.json().catch(() => null)
+
+      let replyText = 'Не могу ответить (error)'
+      if (!resp.ok) {
+        const errMsg = (data && (data.error || data.message)) || `${resp.status} ${resp.statusText}`
+        const details = data && data.details ? `\n
+Details: ${data.details}` : ''
+        replyText = `Произошла ошибка при запросе к API: ${errMsg}${details}`
+      } else if (data && data.reply) {
+        replyText = data.reply
+      } else if (data && data.output_text) {
+        replyText = data.output_text
+      } else if (data && data.reply_text) {
+        replyText = data.reply_text
+      } else if (typeof data === 'string') {
+        replyText = data
+      }
+
+      const assistantMessage = { id: Date.now() + 1, role: 'assistant', text: replyText, time }
+      setMessages((prev) => [...prev, assistantMessage])
+    } catch (err) {
+      const assistantMessage = {
         id: Date.now() + 1,
         role: 'assistant',
-        text: 'Спасибо за вопрос! Это демо-версия ассистента. В полной версии я подключён к базе данных Mentoria Hub и дам тебе точный персональный ответ. Пока ты можешь изучить каталог возможностей и курсов! 😊',
+        text: `Произошла ошибка (error): ${err.message || err}`,
         time,
-      },
-    ])
-    setInput('')
+      }
+      setMessages((prev) => [...prev, assistantMessage])
+    } finally {
+      setLoading(false)
+    }
   }
 
   const handleKey = (e) => {
@@ -74,7 +97,7 @@ export default function AIAssistantPage() {
             <h1 className="text-2xl font-bold text-neutral-900">AI-ассистент</h1>
             <div className="flex items-center gap-1.5 text-xs text-emerald-600 font-medium">
               <span className="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-pulse" />
-              Онлайн
+              Добрый день. Я онлайн
             </div>
           </div>
         </div>
@@ -111,6 +134,26 @@ export default function AIAssistantPage() {
               </div>
             </div>
           ))}
+
+          {/* Loading shit LOL!!!!!!!! */}
+          {loading && (
+            <div className="flex items-end gap-3">
+              {/* Avatar */}
+              <div className="flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold bg-gradient-to-br from-primary-500 to-primary-700 text-white">
+                <Bot size={16} />
+              </div>
+
+              {/* Typing Bubble */}
+              <div className="max-w-[75%] rounded-2xl px-4 py-3 text-sm leading-relaxed bg-neutral-100 text-neutral-900 rounded-bl-md flex items-center gap-1">
+                <span>Ассистент пишет</span>
+                <span className="flex gap-1">
+                  <span className="w-1.5 h-1.5 bg-neutral-400 rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
+                  <span className="w-1.5 h-1.5 bg-neutral-400 rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
+                  <span className="w-1.5 h-1.5 bg-neutral-400 rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
+                </span>
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Suggestions */}
@@ -141,9 +184,10 @@ export default function AIAssistantPage() {
             onClick={handleSend}
             className="btn-primary px-4 py-2.5 flex items-center gap-2 flex-shrink-0 rounded-xl"
             id="ai-send-btn"
+            disabled={loading}
           >
             <Send size={16} />
-            <span className="hidden sm:inline">Отправить</span>
+            <span className="hidden sm:inline">{loading ? 'Пишу...' : 'Отправить'}</span>
           </button>
         </div>
       </div>
