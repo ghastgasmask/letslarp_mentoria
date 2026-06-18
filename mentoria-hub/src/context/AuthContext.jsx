@@ -5,21 +5,48 @@ import { isAdminEmail } from '@/lib/admin'
 const AuthContext = createContext()
 
 async function fetchProfile(userId) {
-  const { data } = await supabase
+  const { data, error } = await supabase
     .from('profiles')
     .select('role, full_name, grade, interests')
     .eq('id', userId)
+    .maybeSingle()
+
+  if (error) throw error
+  return data
+}
+
+async function createProfileIfMissing(authUser) {
+  const profile = await fetchProfile(authUser.id)
+  if (profile) return profile
+
+  const interests = authUser.user_metadata?.interests ?? []
+  const full_name = authUser.user_metadata?.full_name ?? ''
+
+  const { data, error } = await supabase
+    .from('profiles')
+    .insert({
+      id: authUser.id,
+      full_name,
+      grade: null,
+      interests,
+      role: 'student',
+    })
+    .select('role, full_name, grade, interests')
     .single()
 
+  if (error) throw error
   return data
 }
 
 async function enrichUser(authUser) {
   if (!authUser) return null
 
-  const profile = await fetchProfile(authUser.id)
+  const profile = await createProfileIfMissing(authUser)
   return {
     ...authUser,
+    full_name: profile?.full_name ?? authUser?.user_metadata?.full_name ?? '',
+    grade: profile?.grade ?? null,
+    interests: profile?.interests ?? authUser?.user_metadata?.interests ?? [],
     role: profile?.role ?? 'student',
   }
 }
@@ -49,14 +76,20 @@ export function AuthProvider({ children }) {
       email,
       password,
       options: {
-        data: { full_name: name },
+        data: { full_name: name, interests },
       },
     })
 
     if (error) throw error
 
-    const newUser = data.user
+    const newUser = data.user ?? data.session?.user
     const isAdmin = wantsAdmin && isAdminEmail(email)
+
+    if (!newUser) {
+      // If Supabase requires email confirmation and does not return the user immediately,
+      // the profile will be created later when the user signs in.
+      return { ...data, role: isAdmin ? 'admin' : 'student' }
+    }
 
     const { error: profileError } = await supabase
       .from('profiles')
@@ -95,7 +128,7 @@ export function AuthProvider({ children }) {
     const profile = await fetchProfile(data.user.id)
     const role = profile?.role ?? 'student'
 
-    setUser({ ...data.user, role })
+    setUser({ ...data.user, ...profile, role })
 
     return { ...data, role }
   }
@@ -105,10 +138,34 @@ export function AuthProvider({ children }) {
     if (error) throw error
   }
 
+  const updateProfile = async ({ full_name, grade }) => {
+    const userId = user?.id
+    if (!userId) throw new Error('Пользователь не авторизован')
+
+    const { error: authError } = await supabase.auth.updateUser({
+      data: {
+        full_name,
+      },
+    })
+    if (authError) throw authError
+
+    const { error: profileError } = await supabase
+      .from('profiles')
+      .update({
+        full_name,
+        grade: grade !== undefined ? Number(grade) : null,
+      })
+      .eq('id', userId)
+
+    if (profileError) throw profileError
+
+    setUser((prevUser) => prevUser ? { ...prevUser, full_name, grade: grade !== undefined ? Number(grade) : prevUser.grade } : prevUser)
+  }
+
   const isAdmin = user?.role === 'admin'
 
   return (
-    <AuthContext.Provider value={{ user, loading, isAdmin, signUp, signIn, signOut }}>
+    <AuthContext.Provider value={{ user, loading, isAdmin, signUp, signIn, signOut, updateProfile }}>
       {children}
     </AuthContext.Provider>
   )

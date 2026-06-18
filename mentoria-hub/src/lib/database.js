@@ -1,6 +1,8 @@
 import { supabase } from './supabase'
 
-// ==================== File Upload ====================
+// =========================================================================
+// 1. FILE UPLOAD & STORAGE
+// =========================================================================
 
 export async function uploadFile(file, folder = 'general') {
   const fileExt = file.name.split('.').pop()
@@ -26,7 +28,6 @@ export async function deleteFile(fileUrl) {
   if (!fileUrl) return
 
   try {
-    // Extract path from the full URL
     const url = new URL(fileUrl)
     const pathParts = url.pathname.split('/storage/v1/object/public/uploads/')
     if (pathParts.length < 2) return
@@ -41,6 +42,71 @@ export async function deleteFile(fileUrl) {
     console.error('Error deleting file:', err)
   }
 }
+
+// =========================================================================
+// 2. DASHBOARD, ANALYTICS & LEADERBOARD
+// =========================================================================
+
+export async function getPublishedCoursesCount() {
+  const { count, error } = await supabase
+    .from('courses')
+    .select('id', { count: 'exact', head: true })
+    .eq('is_published', true)
+
+  if (error) throw error
+  return count ?? 0
+}
+
+export async function getPublishedOpportunitiesCount() {
+  const { count, error } = await supabase
+    .from('opportunities')
+    .select('id', { count: 'exact', head: true })
+    .eq('is_published', true)
+
+  if (error) throw error
+  return count ?? 0
+}
+
+export async function getUpcomingOpportunityDeadline() {
+  const { data, error } = await supabase
+    .from('opportunities')
+    .select('deadline')
+    .eq('is_published', true)
+    .not('deadline', 'is', null)
+    .order('deadline', { ascending: true })
+    .limit(1)
+
+  if (error) throw error
+  return data?.[0]?.deadline ?? null
+}
+
+export async function getUpcomingOpportunities() {
+  const { data, error } = await supabase
+    .from('opportunities')
+    .select('id, title, deadline, category')
+    .eq('is_published', true)
+    .not('deadline', 'is', null)
+    .order('deadline', { ascending: true })
+    .limit(5)
+
+  if (error) throw error
+  return data || []
+}
+
+export async function getLeaderboardStatsByUser(userId) {
+  const { data, error } = await supabase
+    .from('leaderboard')
+    .select('points, courses_completed')
+    .eq('user_id', userId)
+    .maybeSingle()
+
+  if (error) throw error
+  return data
+}
+
+// =========================================================================
+// 3. COURSES
+// =========================================================================
 
 export async function getCourses() {
   const { data, error } = await supabase
@@ -100,6 +166,10 @@ export async function deleteCourse(id) {
   if (error) throw error
 }
 
+// =========================================================================
+// 4. LESSONS
+// =========================================================================
+
 export async function getLessonsByCourse(courseId) {
   const { data, error } = await supabase
     .from('lessons')
@@ -147,6 +217,10 @@ export async function deleteLesson(id) {
   if (error) throw error
 }
 
+// =========================================================================
+// 5. OPPORTUNITIES
+// =========================================================================
+
 export async function getOpportunities() {
   const { data, error } = await supabase
     .from('opportunities')
@@ -155,6 +229,62 @@ export async function getOpportunities() {
   
   if (error) throw error
   return data || []
+}
+
+export async function getSavedOpportunities(userId) {
+  const { data, error } = await supabase
+    .from('saved_opportunities')
+    .select('opportunity_id')
+    .eq('user_id', userId)
+
+  if (error) throw error
+  return (data || []).map((item) => item.opportunity_id)
+}
+
+export async function getSavedOpportunityDetails(userId) {
+  const { data, error } = await supabase
+    .from('saved_opportunities')
+    .select('opportunity_id')
+    .eq('user_id', userId)
+
+  if (error) throw error
+  const ids = (data || []).map((item) => item.opportunity_id)
+  if (ids.length === 0) return []
+
+  const { data: opportunities, error: opportunitiesError } = await supabase
+    .from('opportunities')
+    .select('*')
+    .in('id', ids)
+    .order('deadline', { ascending: true })
+
+  if (opportunitiesError) throw opportunitiesError
+  return opportunities || []
+}
+
+export async function saveSavedOpportunity(userId, opportunityId) {
+  const { data, error } = await supabase
+    .from('saved_opportunities')
+    .upsert(
+      {
+        user_id: userId,
+        opportunity_id: opportunityId,
+      },
+      { onConflict: ['user_id', 'opportunity_id'], ignoreDuplicates: true }
+    )
+    .select()
+
+  if (error) throw error
+  return data?.[0] ?? null
+}
+
+export async function removeSavedOpportunity(userId, opportunityId) {
+  const { error } = await supabase
+    .from('saved_opportunities')
+    .delete()
+    .eq('user_id', userId)
+    .eq('opportunity_id', opportunityId)
+
+  if (error) throw error
 }
 
 export async function getOpportunityById(id) {
@@ -166,6 +296,19 @@ export async function getOpportunityById(id) {
   
   if (error) throw error
   return data
+}
+
+export async function getOpportunitiesInRange(startIso, endIso) {
+  const { data, error } = await supabase
+    .from('opportunities')
+    .select('id, title, deadline, category, type, is_published')
+    .gte('deadline', startIso)
+    .lte('deadline', endIso)
+    .eq('is_published', true)
+    .order('deadline', { ascending: true })
+
+  if (error) throw error
+  return data || []
 }
 
 export async function createOpportunity(opportunityData) {
@@ -205,7 +348,10 @@ export async function deleteOpportunity(id) {
   if (error) throw error
 }
 
-// Quiz functions
+// =========================================================================
+// 6. QUIZZES & QUIZ RESULTS
+// =========================================================================
+
 export async function getQuizzesByLesson(lessonId) {
   const { data, error } = await supabase
     .from('quizzes')
@@ -278,7 +424,9 @@ export async function getUserQuizResults(userId, lessonId) {
   return data || []
 }
 
-// ==================== Course Progress ====================
+// =========================================================================
+// 7. COURSE PROGRESS
+// =========================================================================
 
 export async function getCourseProgress(userId, courseId) {
   const { data, error } = await supabase
@@ -315,4 +463,70 @@ export async function getUserCourseProgresses(userId) {
   
   if (error) throw error
   return data || []
+}
+// В конец database.js
+
+export async function getUserProfile(userId) {
+  const { data, error } = await supabase
+    .from('profiles')
+    .select('*')
+    .eq('id', userId)
+    .single()
+  if (error) throw error
+  return data
+}
+
+export async function updateUserGoal(userId, goal) {
+  const { data, error } = await supabase
+    .from('profiles')
+    .update({ target_goal: goal })
+    .eq('id', userId)
+    .select()
+  if (error) throw error
+  return data[0]
+}
+
+export async function getUserRoadmap(userId) {
+  const { data, error } = await supabase
+    .from('user_roadmaps')
+    .select('*')
+    .eq('user_id', userId)
+    .maybeSingle()
+  if (error) throw error
+  return data
+}
+
+export async function saveUserRoadmap(userId, roadmapJson, aiAdvice) {
+  const { data, error } = await supabase
+    .from('user_roadmaps')
+    .upsert({
+      user_id: userId,
+      roadmap_json: roadmapJson,
+      ai_advice: aiAdvice,
+      updated_at: new Date()
+    }, { onConflict: 'user_id' })
+    .select()
+  if (error) throw error
+  return data[0]
+}
+
+// В самый конец твоего файла src/lib/database.js
+
+// 1. Получить профиль студента (чтобы узнать его интересы и класс по умолчанию)
+
+// Запрос к нашему созданному API-эндпоинту для работы с LLM
+export async function generateRoadmapViaAI(grade, interests, targetGoal) {
+  const response = await fetch('/api/roadmap-ai', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ grade, interests, targetGoal }),
+  });
+
+  if (!response.ok) {
+    throw new Error('Ошибка при генерации роадмапа через ИИ');
+  }
+
+  return await response.json(); // Возвращает { roadmap: [...], advice: "..." }
 }

@@ -1,6 +1,12 @@
 import { Bookmark, ExternalLink } from 'lucide-react'
 import { useState, useEffect } from 'react'
-import { getOpportunities } from '@/lib/database'
+import { useAuth } from '@/context/AuthContext'
+import {
+  getOpportunities,
+  getSavedOpportunities,
+  saveSavedOpportunity,
+  removeSavedOpportunity,
+} from '@/lib/database'
 
 const categories = ['Все', 'Олимпиады', 'Хакатоны', 'Конкурсы', 'Гранты', 'Летние школы']
 const formats = ['Все форматы', 'Онлайн', 'Офлайн']
@@ -34,23 +40,40 @@ const getCategoryName = (type) => {
 }
 
 export default function OpportunitiesPage() {
+  const { user } = useAuth()
   const [opportunities, setOpportunities] = useState([])
   const [loading, setLoading] = useState(true)
+  const [savedLoading, setSavedLoading] = useState(false)
   const [error, setError] = useState('')
   const [activeCategory, setActiveCategory] = useState('Все')
   const [activeFormat, setActiveFormat] = useState('Все форматы')
   const [activeGrade, setActiveGrade] = useState('Все классы')
-  const [saved, setSaved] = useState(() => {
-    try {
-      return JSON.parse(localStorage.getItem('saved_opportunities') || '[]')
-    } catch {
-      return []
-    }
-  })
+  const [saved, setSaved] = useState([])
 
   useEffect(() => {
     loadOpportunities()
   }, [])
+
+  useEffect(() => {
+    const loadSaved = async () => {
+      if (!user?.id) {
+        setSaved([])
+        return
+      }
+
+      try {
+        setSavedLoading(true)
+        const savedIds = await getSavedOpportunities(user.id)
+        setSaved(savedIds)
+      } catch (err) {
+        setError(err.message)
+      } finally {
+        setSavedLoading(false)
+      }
+    }
+
+    loadSaved()
+  }, [user?.id])
 
   const loadOpportunities = async () => {
     try {
@@ -66,12 +89,28 @@ export default function OpportunitiesPage() {
     }
   }
 
-  const toggleSave = (id) => {
-    setSaved((prev) => {
-      const next = prev.includes(id) ? prev.filter((s) => s !== id) : [...prev, id]
-      localStorage.setItem('saved_opportunities', JSON.stringify(next))
-      return next
-    })
+  const toggleSave = async (id) => {
+    if (!user?.id) {
+      setError('Пожалуйста, войдите, чтобы сохранять возможности.')
+      return
+    }
+
+    const nextSaved = saved.includes(id)
+      ? saved.filter((s) => s !== id)
+      : [...saved, id]
+
+    setSaved(nextSaved)
+
+    try {
+      if (saved.includes(id)) {
+        await removeSavedOpportunity(user.id, id)
+      } else {
+        await saveSavedOpportunity(user.id, id)
+      }
+    } catch (err) {
+      setSaved((prev) => (saved.includes(id) ? [...prev, id] : prev.filter((s) => s !== id)))
+      setError(err.message)
+    }
   }
 
   const formatDate = (dateString) => {
