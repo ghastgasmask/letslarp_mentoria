@@ -1,5 +1,4 @@
-// Vercel serverless function — ВАЖНО: используем export default (ESM),
-// потому что package.json имеет "type": "module"
+
 
 const SYSTEM_PROMPT = `Ты — полезный и доброжелательный ассистент для Mentoria Hub.
 Отвечай на вопросы студентов ясно и по делу, давай рекомендации по олимпиадам, курсам и планам подготовки.
@@ -24,7 +23,7 @@ export default async function handler(req, res) {
 
   const GROQ_API_KEY = process.env.GROQ_API_KEY
 
-  // Если ключа нет — сразу отдаём заглушку, без ошибки 500
+  // Если ключа нет, сразу заглушка
   if (!GROQ_API_KEY) {
     return res.status(200).json({ reply: fallbackReply(messages) })
   }
@@ -35,7 +34,7 @@ export default async function handler(req, res) {
       ...messages.map((m) => ({ role: m.role, content: m.text })),
     ]
 
-    const resp = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+    const resp = await fetch('meta-llama/llama-4-scout-17b-16e-instruct', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
