@@ -513,56 +513,6 @@ export async function saveUserRoadmap(userId, roadmapJson, aiAdvice) {
 // В самый конец твоего файла src/lib/database.js
 
 // 1. Получить профиль студента (чтобы узнать его интересы и класс по умолчанию)
-export async function getUserProfile(userId) {
-  const { data, error } = await supabase
-    .from('profiles')
-    .select('*')
-    .eq('id', userId)
-    .single();
-  
-  if (error) throw error;
-  return data;
-}
-
-// 2. Обновить целевой ВУЗ / цель ученика в профиле
-export async function updateUserGoal(userId, goal) {
-  const { data, error } = await supabase
-    .from('profiles')
-    .update({ target_goal: goal }) // Мы добавили эту колонку через SQL ALTER в предыдущем шаге
-    .eq('id', userId)
-    .select();
-  
-  if (error) throw error;
-  return data[0];
-}
-
-// 3. Получить уже сохраненный персональный роадмап из таблицы user_roadmaps
-export async function getUserRoadmap(userId) {
-  const { data, error } = await supabase
-    .from('user_roadmaps')
-    .select('*')
-    .eq('user_id', userId)
-    .maybeSingle();
-  
-  if (error) throw error;
-  return data;
-}
-
-// 4. Перезаписать/сохранить роадмап и совет ИИ при генерации или изменении чекбоксов
-export async function saveUserRoadmap(userId, roadmapJson, aiAdvice) {
-  const { data, error } = await supabase
-    .from('user_roadmaps')
-    .upsert({
-      user_id: userId,
-      roadmap_json: roadmapJson,
-      ai_advice: aiAdvice,
-      updated_at: new Date()
-    }, { onConflict: 'user_id' })
-    .select();
-  
-  if (error) throw error;
-  return data[0];
-}
 
 // Запрос к нашему созданному API-эндпоинту для работы с LLM
 export async function generateRoadmapViaAI(grade, interests, targetGoal) {
