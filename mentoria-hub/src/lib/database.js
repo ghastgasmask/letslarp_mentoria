@@ -1,5 +1,47 @@
 import { supabase } from './supabase'
 
+// ==================== File Upload ====================
+
+export async function uploadFile(file, folder = 'general') {
+  const fileExt = file.name.split('.').pop()
+  const fileName = `${folder}/${Date.now()}_${Math.random().toString(36).substring(2)}.${fileExt}`
+
+  const { data, error } = await supabase.storage
+    .from('uploads')
+    .upload(fileName, file, {
+      cacheControl: '3600',
+      upsert: false,
+    })
+
+  if (error) throw error
+
+  const { data: urlData } = supabase.storage
+    .from('uploads')
+    .getPublicUrl(data.path)
+
+  return urlData.publicUrl
+}
+
+export async function deleteFile(fileUrl) {
+  if (!fileUrl) return
+
+  try {
+    // Extract path from the full URL
+    const url = new URL(fileUrl)
+    const pathParts = url.pathname.split('/storage/v1/object/public/uploads/')
+    if (pathParts.length < 2) return
+
+    const filePath = decodeURIComponent(pathParts[1])
+    const { error } = await supabase.storage
+      .from('uploads')
+      .remove([filePath])
+
+    if (error) throw error
+  } catch (err) {
+    console.error('Error deleting file:', err)
+  }
+}
+
 export async function getCourses() {
   const { data, error } = await supabase
     .from('courses')
@@ -231,6 +273,45 @@ export async function getUserQuizResults(userId, lessonId) {
     .eq('user_id', userId)
     .eq('lesson_id', lessonId)
     .order('created_at', { ascending: false })
+  
+  if (error) throw error
+  return data || []
+}
+
+// ==================== Course Progress ====================
+
+export async function getCourseProgress(userId, courseId) {
+  const { data, error } = await supabase
+    .from('course_progress')
+    .select('*')
+    .eq('user_id', userId)
+    .eq('course_id', courseId)
+    .maybeSingle()
+  
+  if (error) throw error
+  return data
+}
+
+export async function updateCourseProgress(userId, courseId, progressData) {
+  const { data, error } = await supabase
+    .from('course_progress')
+    .upsert({
+      user_id: userId,
+      course_id: courseId,
+      ...progressData,
+      last_accessed_at: new Date(),
+    }, { onConflict: 'user_id,course_id' })
+    .select()
+  
+  if (error) throw error
+  return data[0]
+}
+
+export async function getUserCourseProgresses(userId) {
+  const { data, error } = await supabase
+    .from('course_progress')
+    .select('*')
+    .eq('user_id', userId)
   
   if (error) throw error
   return data || []

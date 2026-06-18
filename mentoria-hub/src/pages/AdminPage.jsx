@@ -10,8 +10,8 @@ const stats = [
 
 const recentUsers = [
   { name: 'PLACE HOLDER', email: 'aidana@mail.kz', grade: '10', joined: '2 ч назад' },
-  { name: 'Place HOLDER', email: 'nurlan@mail.kz', grade: '11', joined: '5 ч назад' },
-  { name: 'PLACE HolDER', email: 'diana@mail.kz', grade: '9', joined: '1 д назад' },
+  { name: 'PLACE HOLDER', email: 'nurlan@mail.kz', grade: '11', joined: '5 ч назад' },
+  { name: 'PLACE HOLDER', email: 'diana@mail.kz', grade: '9', joined: '1 д назад' },
 ]
 
 const pendingItems = [

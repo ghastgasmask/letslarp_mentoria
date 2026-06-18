@@ -1,9 +1,10 @@
-import { useState } from 'react'
-import { X, Plus, Edit2, Trash2 } from 'lucide-react'
-import { createQuiz, updateQuiz, deleteQuiz } from '@/lib/database'
+import { useState, useEffect } from 'react'
+import { X, Plus, Edit2, Trash2, Loader2 } from 'lucide-react'
+import { createQuiz, updateQuiz, deleteQuiz, getQuizzesByLesson } from '@/lib/database'
 
 export default function QuizBuilder({ lesson, onClose, onSave }) {
-  const [quizzes, setQuizzes] = useState(lesson?.quizzes || [])
+  const [quizzes, setQuizzes] = useState([])
+  const [loadingQuizzes, setLoadingQuizzes] = useState(true)
   const [showForm, setShowForm] = useState(false)
   const [editingQuiz, setEditingQuiz] = useState(null)
   const [formData, setFormData] = useState({
@@ -15,6 +16,24 @@ export default function QuizBuilder({ lesson, onClose, onSave }) {
   })
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
+
+  useEffect(() => {
+    if (lesson?.id && typeof lesson.id !== 'number') {
+      const loadQuizzes = async () => {
+        try {
+          const data = await getQuizzesByLesson(lesson.id)
+          setQuizzes(data || [])
+        } catch (err) {
+          setError('Ошибка загрузки тестов: ' + err.message)
+        } finally {
+          setLoadingQuizzes(false)
+        }
+      }
+      loadQuizzes()
+    } else {
+      setLoadingQuizzes(false)
+    }
+  }, [lesson])
 
   const handleInputChange = (e) => {
     const { name, value, type } = e.target
@@ -96,12 +115,28 @@ export default function QuizBuilder({ lesson, onClose, onSave }) {
     try {
       setLoading(true)
       
-      // Save or update quizzes
+      // Get all existing quizzes from DB to handle deletions
+      const dbQuizzes = await getQuizzesByLesson(lesson.id)
+      const currentQuizIds = quizzes.map(q => q.id).filter(id => typeof id === 'string')
+      
+      // Delete quizzes that were removed in the UI
+      for (const dbQuiz of dbQuizzes) {
+        if (!currentQuizIds.includes(dbQuiz.id)) {
+          await deleteQuiz(dbQuiz.id)
+        }
+      }
+
+      // Save or update remaining quizzes
       for (const quiz of quizzes) {
         const quizData = {
-          ...quiz,
+          course_id: lesson.course_id,
+          title: quiz.question || 'Тест',
+          question: quiz.question,
+          options: quiz.options || ['', '', '', ''],
+          correct_answer_index: quiz.correct_answer_index || 0,
+          explanation: quiz.explanation || '',
+          order: quiz.order || 1,
           lesson_id: lesson.id,
-          id: undefined,
         }
 
         if (quiz.id && typeof quiz.id !== 'number') {
@@ -147,143 +182,152 @@ export default function QuizBuilder({ lesson, onClose, onSave }) {
 
         {/* Content */}
         <div className="p-6 space-y-6">
-          <div className="flex items-center justify-between">
-            <h3 className="text-lg font-semibold text-white">Вопросы ({quizzes.length})</h3>
-            <button
-              onClick={handleAddQuiz}
-              className="flex items-center gap-2 px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition text-sm font-medium"
-            >
-              <Plus size={16} />
-              Добавить вопрос
-            </button>
-          </div>
-
-          {showForm && (
-            <div className="bg-neutral-800 border border-neutral-700 rounded-lg p-6 space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-neutral-300 mb-2">
-                  Вопрос
-                </label>
-                <textarea
-                  name="question"
-                  value={formData.question}
-                  onChange={handleInputChange}
-                  placeholder="Введите вопрос"
-                  rows="2"
-                  className="w-full px-3 py-2 bg-neutral-700 border border-neutral-600 rounded text-white placeholder-neutral-500 focus:outline-none focus:border-primary-500 text-sm"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-neutral-300 mb-2">
-                  Варианты ответов
-                </label>
-                <div className="space-y-2">
-                  {formData.options.map((option, idx) => (
-                    <div key={idx} className="flex items-center gap-2">
-                      <input
-                        type="radio"
-                        name="correct_answer"
-                        checked={formData.correct_answer_index === idx}
-                        onChange={() =>
-                          setFormData({
-                            ...formData,
-                            correct_answer_index: idx,
-                          })
-                        }
-                        className="w-4 h-4"
-                      />
-                      <input
-                        type="text"
-                        value={option}
-                        onChange={(e) => handleOptionChange(idx, e.target.value)}
-                        placeholder={`Вариант ${idx + 1}`}
-                        className="flex-1 px-3 py-2 bg-neutral-700 border border-neutral-600 rounded text-white placeholder-neutral-500 focus:outline-none focus:border-primary-500 text-sm"
-                      />
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-neutral-300 mb-2">
-                  Объяснение (опционально)
-                </label>
-                <textarea
-                  name="explanation"
-                  value={formData.explanation}
-                  onChange={handleInputChange}
-                  placeholder="Объяснение для правильного ответа"
-                  rows="2"
-                  className="w-full px-3 py-2 bg-neutral-700 border border-neutral-600 rounded text-white placeholder-neutral-500 focus:outline-none focus:border-primary-500 text-sm"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-neutral-300 mb-2">
-                  Порядок
-                </label>
-                <input
-                  type="number"
-                  name="order"
-                  value={formData.order}
-                  onChange={handleInputChange}
-                  min="1"
-                  className="w-full px-3 py-2 bg-neutral-700 border border-neutral-600 rounded text-white focus:outline-none focus:border-primary-500 text-sm"
-                />
-              </div>
-
-              <div className="flex gap-2 justify-end">
-                <button
-                  onClick={() => setShowForm(false)}
-                  className="px-3 py-2 bg-neutral-700 text-neutral-300 rounded hover:bg-neutral-600 transition text-sm"
-                >
-                  Отмена
-                </button>
-                <button
-                  onClick={handleSaveQuiz}
-                  className="px-3 py-2 bg-primary-600 text-white rounded hover:bg-primary-700 transition text-sm"
-                >
-                  {editingQuiz ? 'Обновить' : 'Добавить'} вопрос
-                </button>
-              </div>
+          {loadingQuizzes ? (
+            <div className="flex items-center justify-center py-12 text-neutral-400">
+              <Loader2 size={24} className="animate-spin mr-2" />
+              <span>Загрузка тестов...</span>
             </div>
-          )}
-
-          <div className="space-y-2">
-            {quizzes.map((quiz, idx) => (
-              <div
-                key={quiz.id}
-                className="flex items-start justify-between bg-neutral-800 p-4 rounded-lg border border-neutral-700"
-              >
-                <div className="flex-1">
-                  <div className="text-sm font-medium text-white">
-                    Вопрос {idx + 1}: {quiz.question}
-                  </div>
-                  <div className="text-xs text-neutral-400 mt-2">
-                    <p>Правильный ответ: {quiz.options[quiz.correct_answer_index]}</p>
-                    {quiz.explanation && (
-                      <p className="mt-1">Объяснение: {quiz.explanation}</p>
-                    )}
-                  </div>
-                </div>
-                <div className="flex gap-2">
-                  <button
-                    onClick={() => handleEditQuiz(quiz)}
-                    className="p-1.5 text-neutral-400 hover:text-primary-400 transition"
-                  >
-                    <Edit2 size={16} />
-                  </button>
-                  <button
-                    onClick={() => handleDeleteQuiz(quiz.id)}
-                    className="p-1.5 text-neutral-400 hover:text-red-400 transition"
-                  >
-                    <Trash2 size={16} />
-                  </button>
-                </div>
+          ) : (
+            <>
+              <div className="flex items-center justify-between">
+                <h3 className="text-lg font-semibold text-white">Вопросы ({quizzes.length})</h3>
+                <button
+                  onClick={handleAddQuiz}
+                  className="flex items-center gap-2 px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition text-sm font-medium"
+                >
+                  <Plus size={16} />
+                  Добавить вопрос
+                </button>
               </div>
-            ))}
-          </div>
+
+              {showForm && (
+                <div className="bg-neutral-800 border border-neutral-700 rounded-lg p-6 space-y-4">
+                  <div>
+                    <label className="block text-sm font-medium text-neutral-300 mb-2">
+                      Вопрос
+                    </label>
+                    <textarea
+                      name="question"
+                      value={formData.question}
+                      onChange={handleInputChange}
+                      placeholder="Введите вопрос"
+                      rows="2"
+                      className="w-full px-3 py-2 bg-neutral-700 border border-neutral-600 rounded text-white placeholder-neutral-500 focus:outline-none focus:border-primary-500 text-sm"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-neutral-300 mb-2">
+                      Варианны ответов
+                    </label>
+                    <div className="space-y-2">
+                      {formData.options.map((option, idx) => (
+                        <div key={idx} className="flex items-center gap-2">
+                          <input
+                            type="radio"
+                            name="correct_answer"
+                            checked={formData.correct_answer_index === idx}
+                            onChange={() =>
+                              setFormData({
+                                ...formData,
+                                correct_answer_index: idx,
+                              })
+                            }
+                            className="w-4 h-4"
+                          />
+                          <input
+                            type="text"
+                            value={option}
+                            onChange={(e) => handleOptionChange(idx, e.target.value)}
+                            placeholder={`Вариант ${idx + 1}`}
+                            className="flex-1 px-3 py-2 bg-neutral-700 border border-neutral-600 rounded text-white placeholder-neutral-500 focus:outline-none focus:border-primary-500 text-sm"
+                          />
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-neutral-300 mb-2">
+                      Объяснение (опционально)
+                    </label>
+                    <textarea
+                      name="explanation"
+                      value={formData.explanation}
+                      onChange={handleInputChange}
+                      placeholder="Объяснение для правильного ответа"
+                      rows="2"
+                      className="w-full px-3 py-2 bg-neutral-700 border border-neutral-600 rounded text-white placeholder-neutral-500 focus:outline-none focus:border-primary-500 text-sm"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-neutral-300 mb-2">
+                      Порядок
+                    </label>
+                    <input
+                      type="number"
+                      name="order"
+                      value={formData.order}
+                      onChange={handleInputChange}
+                      min="1"
+                      className="w-full px-3 py-2 bg-neutral-700 border border-neutral-600 rounded text-white focus:outline-none focus:border-primary-500 text-sm"
+                    />
+                  </div>
+
+                  <div className="flex gap-2 justify-end">
+                    <button
+                      onClick={() => setShowForm(false)}
+                      className="px-3 py-2 bg-neutral-700 text-neutral-300 rounded hover:bg-neutral-600 transition text-sm"
+                    >
+                      Отмена
+                    </button>
+                    <button
+                      onClick={handleSaveQuiz}
+                      className="px-3 py-2 bg-primary-600 text-white rounded hover:bg-primary-700 transition text-sm"
+                    >
+                      {editingQuiz ? 'Обновить' : 'Добавить'} вопрос
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              <div className="space-y-2">
+                {quizzes.map((quiz, idx) => (
+                  <div
+                    key={quiz.id}
+                    className="flex items-start justify-between bg-neutral-800 p-4 rounded-lg border border-neutral-700"
+                  >
+                    <div className="flex-1">
+                      <div className="text-sm font-medium text-white">
+                        Вопрос {idx + 1}: {quiz.question}
+                      </div>
+                      <div className="text-xs text-neutral-400 mt-2">
+                        <p>Правильный ответ: {quiz.options[quiz.correct_answer_index]}</p>
+                        {quiz.explanation && (
+                          <p className="mt-1">Объяснение: {quiz.explanation}</p>
+                        )}
+                      </div>
+                    </div>
+                    <div className="flex gap-2">
+                      <button
+                        onClick={() => handleEditQuiz(quiz)}
+                        className="p-1.5 text-neutral-400 hover:text-primary-400 transition"
+                      >
+                        <Edit2 size={16} />
+                      </button>
+                      <button
+                        onClick={() => handleDeleteQuiz(quiz.id)}
+                        className="p-1.5 text-neutral-400 hover:text-red-400 transition"
+                      >
+                        <Trash2 size={16} />
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </>
+          )}
         </div>
 
         {/* Footer */}

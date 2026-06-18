@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Calculator, Languages, Atom, GraduationCap, Code, TrendingUp, BookOpen } from 'lucide-react'
-import { getCourses, getLessonsByCourse } from '@/lib/database'
+import { getCourses, getLessonsByCourse, getUserCourseProgresses } from '@/lib/database'
+import { useAuth } from '@/context/AuthContext'
 
 // Icon mapping for categories
 const CATEGORY_ICONS = {
@@ -35,14 +36,35 @@ const LEVEL_COLORS = {
 
 export default function CoursesPage() {
   const navigate = useNavigate()
+  const { user } = useAuth()
   const [courses, setCourses] = useState([])
   const [courseStats, setCourseStats] = useState({})
+  const [progresses, setProgresses] = useState({})
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
 
   useEffect(() => {
     loadCourses()
   }, [])
+
+  useEffect(() => {
+    if (user) {
+      loadProgress()
+    }
+  }, [user])
+
+  const loadProgress = async () => {
+    try {
+      const progressData = await getUserCourseProgresses(user.id)
+      const progMap = {}
+      progressData.forEach(p => {
+        progMap[p.course_id] = p.progress_percentage || 0
+      })
+      setProgresses(progMap)
+    } catch (err) {
+      console.error('Ошибка загрузки прогресса:', err)
+    }
+  }
 
   const loadCourses = async () => {
     try {
@@ -150,10 +172,10 @@ export default function CoursesPage() {
                   <div className="mb-5">
                     <div className="flex justify-between text-xs text-neutral-500 mb-1.5">
                       <span>Прогресс</span>
-                      <span className="font-medium">0%</span>
+                      <span className="font-medium">{progresses[course.id] || 0}%</span>
                     </div>
                     <div className="progress-bar">
-                      <div className="progress-fill" style={{ width: '0%' }} />
+                      <div className="progress-fill" style={{ width: `${progresses[course.id] || 0}%` }} />
                     </div>
                   </div>
 
