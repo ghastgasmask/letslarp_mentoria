@@ -95,7 +95,7 @@ export default function OpportunitiesPage() {
 
     // Grade match check
     const gradeNum = Number(activeGrade)
-    const gradeMatch = activeGrade === 'Все классы' || 
+    const gradeMatch = activeGrade === 'Все классы' ||
       (op.grade_from <= gradeNum && op.grade_to >= gradeNum)
 
     return catMatch && fmtMatch && gradeMatch
@@ -137,11 +137,10 @@ export default function OpportunitiesPage() {
               <button
                 key={cat}
                 onClick={() => setActiveCategory(cat)}
-                className={`px-4 py-1.5 rounded-full text-sm font-medium transition-all duration-150 ${
-                  activeCategory === cat
+                className={`px-4 py-1.5 rounded-full text-sm font-medium transition-all duration-150 ${activeCategory === cat
                     ? 'bg-primary-600 text-white'
                     : 'bg-neutral-100 text-neutral-600 hover:bg-neutral-200'
-                }`}
+                  }`}
               >
                 {cat}
               </button>
@@ -157,11 +156,10 @@ export default function OpportunitiesPage() {
                 <button
                   key={fmt}
                   onClick={() => setActiveFormat(fmt)}
-                  className={`px-4 py-1.5 rounded-full text-sm font-medium transition-all duration-150 ${
-                    activeFormat === fmt
+                  className={`px-4 py-1.5 rounded-full text-sm font-medium transition-all duration-150 ${activeFormat === fmt
                       ? 'bg-primary-600 text-white'
                       : 'bg-neutral-100 text-neutral-600 hover:bg-neutral-200'
-                  }`}
+                    }`}
                 >
                   {fmt}
                 </button>
@@ -175,11 +173,10 @@ export default function OpportunitiesPage() {
                 <button
                   key={g}
                   onClick={() => setActiveGrade(g)}
-                  className={`px-4 py-1.5 rounded-full text-sm font-medium transition-all duration-150 ${
-                    activeGrade === g
+                  className={`px-4 py-1.5 rounded-full text-sm font-medium transition-all duration-150 ${activeGrade === g
                       ? 'bg-primary-600 text-white'
                       : 'bg-neutral-100 text-neutral-600 hover:bg-neutral-200'
-                  }`}
+                    }`}
                 >
                   {g}
                 </button>
@@ -204,18 +201,17 @@ export default function OpportunitiesPage() {
           {filtered.map((op) => {
             const mappedFormat = op.format === 'Online' ? 'Онлайн' : op.format === 'Offline' ? 'Офлайн' : 'Гибрид'
             const badgeColor = categoryColors[op.type] || categoryColors[getCategoryName(op.type)] || 'bg-neutral-100 text-neutral-700'
-            
+
             return (
               <div key={op.id} className="card p-6 flex flex-col">
                 <div className="flex items-start justify-between mb-3">
                   <span className={`badge ${badgeColor}`}>{op.type || op.category}</span>
                   <button
                     onClick={() => toggleSave(op.id)}
-                    className={`p-1.5 rounded-lg transition-all duration-150 ${
-                      saved.includes(op.id)
+                    className={`p-1.5 rounded-lg transition-all duration-150 ${saved.includes(op.id)
                         ? 'text-primary-600 bg-primary-50'
                         : 'text-neutral-400 hover:text-primary-600 hover:bg-primary-50'
-                    }`}
+                      }`}
                     title="Сохранить"
                   >
                     <Bookmark size={16} fill={saved.includes(op.id) ? 'currentColor' : 'none'} />
