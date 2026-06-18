@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { X, Plus, Edit2, Trash2 } from 'lucide-react'
+import { X, Plus, Edit2, Trash2, HelpCircle } from 'lucide-react'
 import {
   createCourse,
   updateCourse,
@@ -8,6 +8,7 @@ import {
   deleteLesson,
   getLessonsByCourse,
 } from '@/lib/database'
+import QuizBuilder from './QuizBuilder'
 
 const DIFFICULTY_LEVELS = ['Beginner', 'Intermediate', 'Advanced']
 const CATEGORIES = ['Mathematics', 'English', 'Physics', 'Biology', 'Economics', 'Programming', 'Preparation']
@@ -28,6 +29,8 @@ export default function CourseBuilder({ course = null, onClose, onSave }) {
   const [lessons, setLessons] = useState([])
   const [showLessonForm, setShowLessonForm] = useState(false)
   const [editingLesson, setEditingLesson] = useState(null)
+  const [showQuizBuilder, setShowQuizBuilder] = useState(false)
+  const [selectedLessonForQuiz, setSelectedLessonForQuiz] = useState(null)
   const [lessonData, setLessonData] = useState({
     title: '',
     description: '',
@@ -496,6 +499,17 @@ export default function CourseBuilder({ course = null, onClose, onSave }) {
                     </div>
                   </div>
                   <div className="flex gap-2">
+                    {lesson.has_quiz && (
+                      <button
+                        onClick={() => {
+                          setSelectedLessonForQuiz(lesson)
+                          setShowQuizBuilder(true)
+                        }}
+                        className="p-1.5 text-neutral-400 hover:text-amber-400 transition" title="Редактировать тесты"
+                      >
+                        <HelpCircle size={16} />
+                      </button>
+                    )}
                     <button
                       onClick={() => handleEditLesson(lesson)}
                       className="p-1.5 text-neutral-400 hover:text-primary-400 transition"
@@ -532,6 +546,21 @@ export default function CourseBuilder({ course = null, onClose, onSave }) {
           </button>
         </div>
       </div>
+      
+      {/* Quiz Builder Modal */}
+      {showQuizBuilder && selectedLessonForQuiz && (
+        <QuizBuilder
+          lesson={selectedLessonForQuiz}
+          onClose={() => {
+            setShowQuizBuilder(false)
+            setSelectedLessonForQuiz(null)
+          }}
+          onSave={() => {
+            setShowQuizBuilder(false)
+            setSelectedLessonForQuiz(null)
+          }}
+        />
+      )}
     </div>
   )
 }

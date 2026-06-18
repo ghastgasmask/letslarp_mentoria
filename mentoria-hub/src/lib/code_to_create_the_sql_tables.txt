@@ -1,0 +1,197 @@
+create table public.course_progress (
+  id uuid not null default gen_random_uuid (),
+  user_id uuid not null,
+  course_id uuid not null,
+  current_lesson integer null default 0,
+  completed_lessons integer null default 0,
+  is_completed boolean null default false,
+  progress_percentage integer null default 0,
+  enrolled_at timestamp without time zone null default now(),
+  last_accessed_at timestamp without time zone null default now(),
+  constraint course_progress_pkey primary key (id),
+  constraint course_progress_user_id_course_id_key unique (user_id, course_id),
+  constraint course_progress_course_id_fkey foreign KEY (course_id) references courses (id) on delete CASCADE,
+  constraint course_progress_user_id_fkey foreign KEY (user_id) references auth.users (id) on delete CASCADE,
+  constraint course_progress_progress_percentage_check check (
+    (
+      (progress_percentage >= 0)
+      and (progress_percentage <= 100)
+    )
+  )
+) TABLESPACE pg_default;
+
+create index IF not exists idx_course_progress_user on public.course_progress using btree (user_id) TABLESPACE pg_default;
+
+create index IF not exists idx_course_progress_course on public.course_progress using btree (course_id) TABLESPACE pg_default;
+
+-----------------------------------------------------------
+
+create table public.courses (
+  id uuid not null default gen_random_uuid (),
+  title text not null,
+  description text null,
+  subject text not null default 'Mathematics'::text,
+  difficulty text null default 'beginner'::text,
+  created_at timestamp without time zone null default now(),
+  category text null default 'Mathematics'::text,
+  duration_hours text null default '10'::text,
+  image_url text null default ''::text,
+  is_published text null default 'No'::text,
+  level text null default 'Beginner'::text,
+  updated_at text null default ''::text,
+  constraint courses_pkey primary key (id),
+  constraint courses_difficulty_check check (
+    (
+      difficulty = any (
+        array[
+          'beginner'::text,
+          'intermediate'::text,
+          'advanced'::text
+        ]
+      )
+    )
+  )
+) TABLESPACE pg_default;
+
+--------------------------------------------------
+create table public.leaderboard (
+  id uuid not null default gen_random_uuid (),
+  user_id uuid not null,
+  points integer null default 0,
+  courses_completed integer null default 0,
+  updated_at timestamp without time zone null default now(),
+  constraint leaderboard_pkey primary key (id),
+  constraint leaderboard_user_id_key unique (user_id),
+  constraint leaderboard_user_id_fkey foreign KEY (user_id) references auth.users (id) on delete CASCADE
+) TABLESPACE pg_default;
+
+----------------------------------------------------
+
+create table public.lessons (
+  id uuid not null default gen_random_uuid (),
+  course_id uuid not null,
+  title text not null,
+  content text null,
+  video_url text null,
+  "order" integer not null,
+  created_at timestamp without time zone null default now(),
+  description text null default ''::text,
+  has_quiz text null default 'No'::text,
+  constraint lessons_pkey primary key (id),
+  constraint lessons_course_id_fkey foreign KEY (course_id) references courses (id) on delete CASCADE
+) TABLESPACE pg_default;
+
+create index IF not exists idx_lessons_course on public.lessons using btree (course_id) TABLESPACE pg_default;
+
+---------------------------------------------------
+
+create table public.opportunities (
+  id uuid not null default gen_random_uuid (),
+  title text not null,
+  description text null,
+  category text not null,
+  format text not null,
+  grade text null,
+  deadline timestamp without time zone not null,
+  requirements text null,
+  link text null,
+  created_at timestamp without time zone null default now(),
+  grade_from integer null default 8,
+  grade_to integer null default 11,
+  image_url text null default ''::text,
+  is_published text null default 'No'::text,
+  type text null default 'Olympiad'::text,
+  updated_at text null default ''::text,
+  constraint opportunities_pkey primary key (id),
+  constraint opportunities_category_check check (
+    (
+      category = any (
+        array[
+          'STEM'::text,
+          'Бизнес'::text,
+          'Финансы'::text,
+          'Программирование'::text,
+          'Наука'::text,
+          'Социальное влияние'::text,
+          'Другое'::text
+        ]
+      )
+    )
+  ),
+  constraint opportunities_format_check check (
+    (
+      format = any (
+        array['Online'::text, 'Offline'::text, 'Hybrid'::text]
+      )
+    )
+  )
+) TABLESPACE pg_default;
+
+-----------------------------------------------------
+
+create table public.profiles (
+  id uuid not null,
+  full_name text null,
+  grade integer null,
+  interests jsonb null default '[]'::jsonb,
+  avatar_url text null,
+  created_at timestamp without time zone null default now(),
+  role text null default 'student'::text,
+  constraint profiles_pkey primary key (id),
+  constraint profiles_id_fkey foreign KEY (id) references auth.users (id) on delete CASCADE,
+  constraint profiles_grade_check check (
+    (
+      (grade >= 8)
+      and (grade <= 11)
+    )
+  ),
+  constraint profiles_role_check check (
+    (
+      role = any (array['student'::text, 'admin'::text])
+    )
+  )
+) TABLESPACE pg_default;
+
+-----------------------------------------------------
+
+create table public.quiz_results (
+  id uuid not null default gen_random_uuid (),
+  user_id uuid not null,
+  quiz_id uuid not null,
+  score integer not null,
+  answered_at timestamp without time zone null default now(),
+  constraint quiz_results_pkey primary key (id),
+  constraint quiz_results_quiz_id_fkey foreign KEY (quiz_id) references quizzes (id) on delete CASCADE,
+  constraint quiz_results_user_id_fkey foreign KEY (user_id) references auth.users (id) on delete CASCADE
+) TABLESPACE pg_default;
+
+create index IF not exists idx_quiz_results_user on public.quiz_results using btree (user_id) TABLESPACE pg_default;
+
+-------------------------------------------------------
+
+create table public.quizzes (
+  id uuid not null default gen_random_uuid (),
+  course_id uuid not null,
+  title text not null,
+  questions jsonb not null default '[]'::jsonb,
+  created_at timestamp without time zone null default now(),
+  constraint quizzes_pkey primary key (id),
+  constraint quizzes_course_id_fkey foreign KEY (course_id) references courses (id) on delete CASCADE
+) TABLESPACE pg_default;
+
+-------------------------------------------------------
+
+create table public.saved_opportunities (
+  id uuid not null default gen_random_uuid (),
+  user_id uuid not null,
+  opportunity_id uuid not null,
+  saved_at timestamp without time zone null default now(),
+  constraint saved_opportunities_pkey primary key (id),
+  constraint saved_opportunities_user_id_opportunity_id_key unique (user_id, opportunity_id),
+  constraint saved_opportunities_opportunity_id_fkey foreign KEY (opportunity_id) references opportunities (id) on delete CASCADE,
+  constraint saved_opportunities_user_id_fkey foreign KEY (user_id) references auth.users (id) on delete CASCADE
+) TABLESPACE pg_default;
+
+create index IF not exists idx_saved_opps_user on public.saved_opportunities using btree (user_id) TABLESPACE pg_default;
+
+----------------------------------------------------------

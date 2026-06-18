@@ -4,6 +4,8 @@ import { AuthProvider, useAuth } from '@/context/AuthContext'
 import HomePage from '@/pages/HomePage'
 import AuthPage from '@/pages/AuthPage'
 import CoursesPage from '@/pages/CoursesPage'
+import CourseLessonsPage from '@/pages/CourseLessonsPage'
+import LessonQuizPage from '@/pages/LessonQuizPage'
 import OpportunitiesPage from '@/pages/OpportunitiesPage'
 import DashboardPage from '@/pages/DashboardPage'
 import LeaderboardPage from '@/pages/LeaderboardPage'
@@ -76,6 +78,18 @@ function AppRoutes() {
         <Route path="/courses" element={
           <ProtectedRoute>
             <div className="pt-16"><CoursesPage /></div>
+            <ChatButton />
+          </ProtectedRoute>
+        } />
+        <Route path="/course/:courseId" element={
+          <ProtectedRoute>
+            <div className="pt-16"><CourseLessonsPage /></div>
+            <ChatButton />
+          </ProtectedRoute>
+        } />
+        <Route path="/lesson/:lessonId/quiz" element={
+          <ProtectedRoute>
+            <div className="pt-16"><LessonQuizPage /></div>
             <ChatButton />
           </ProtectedRoute>
         } />
